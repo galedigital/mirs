@@ -636,7 +636,7 @@ $("pushBtn").onclick=async()=>{if(!OS)return;try{await OS.Notifications.requestP
 initPush();
 
 /* ---------- power on ---------- */
-let deptCode="",curDept="",onLine=null,ownPush="",hubPush="";
+let isTest=false,deptCode="",curDept="",onLine=null,ownPush="",hubPush="";
 const pendingLine=(new URLSearchParams(location.hash.slice(1))).get("line")||"";
 function savedCh(){try{const a=JSON.parse(localStorage.getItem("mirs-codes")||"[]");return Array.isArray(a)?a.filter(x=>x&&x.code&&x.dept):[]}catch(e){return[]}}
 function putSaved(a){try{localStorage.setItem("mirs-codes",JSON.stringify(a.slice(0,12)))}catch(e){}}
@@ -670,19 +670,22 @@ $("powerBtn").onclick=async()=>{
   if(code.length<6){$("powerMsg").textContent="צריך את קוד המחלקה (10 ספרות). מקבלים מהמנהל.";$("chIn").focus();return}
   $("powerBtn").disabled=true;$("powerMsg").textContent="בודק קוד…";
   await refreshDepts(); await deriveChannel(code);
-  const d=DEPTS.find(x=>x.t===codeTag);
+  let d=DEPTS.find(x=>x.t===codeTag);
+  isTest=!d&&/^0000\d{6}$/.test(code);
+  if(isTest)d={id:"test",n:"🧪 ערוץ בדיקה",t:codeTag,hub:false};
   if(!d){$("powerBtn").disabled=false;
     if(deptCode){forgetCh(deptCode);deptCode="";curDept="";try{localStorage.removeItem("mirs-code")}catch(e){}showCode();$("powerMsg").textContent="קוד המחלקה הוחלף. בקשו את הקוד החדש מהמנהל."}
     else $("powerMsg").textContent="הקוד לא מוכר. בדקו שהקלדתם נכון.";
     $("chIn").focus();return}
   deptCode=code;curDept=d.id;myName=n;
-  try{localStorage.setItem("mirs-name",n);localStorage.setItem("mirs-code",code);localStorage.setItem("mirs-dept",d.id)}catch(e){}rememberCh(code,d.id);
+  try{localStorage.setItem("mirs-name",n)}catch(e){}
+  if(!isTest){try{localStorage.setItem("mirs-code",code);localStorage.setItem("mirs-dept",d.id)}catch(e){}rememberCh(code,d.id)}
   ensureAC(); chirp("in"); $("powerMsg").textContent="מבקש גישה למיקרופון…";
   await setupMic(); powered=true; $("power").classList.remove("show");
   curCh=d.id; document.querySelector(".brand p").textContent="🔒 "+d.n;
   loadKnown();await startNet(code);ownPush=pushTag;
   if(d.hub){const k=await getLine(d.id);if(k)hubPush=await pushTagOf(k)}
-  tagPush();$("shareBtn").classList.add("show");$("swBtn").classList.add("show");drawLineBtns();
+  tagPush();if(!isTest)$("shareBtn").classList.add("show");$("swBtn").classList.add("show");drawLineBtns();
   if(pendingLine&&pendingLine===d.id)joinLine(d.id,false);
   if(!micOk)showOver("אין מיקרופון","מצב האזנה בלבד","הדפדפן לא אישר גישה למיקרופון. אפשר עדיין לשמוע אחרים.",false,false);
   render();
@@ -692,7 +695,7 @@ async function getLine(hub){
   try{const c=JSON.parse(localStorage.getItem("mirs-line-"+hub)||"null");if(c&&c.code===deptCode&&c.key)return c.key}catch(e){}
   try{const r=await fetch("/.netlify/functions/depts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"line",code:deptCode,hub})});
     const j=await r.json();if(!j.ok)return "";try{localStorage.setItem("mirs-line-"+hub,JSON.stringify({code:deptCode,key:j.key}))}catch(e){}return j.key}catch(e){return ""}}
-function drawLineBtns(){const box=$("lineBtns");box.replaceChildren();if(!powered)return;
+function drawLineBtns(){const box=$("lineBtns");box.replaceChildren();if(!powered||isTest)return;
   const mk=(txt,cls,fn)=>{const b=document.createElement("button");b.className="install show"+(cls?" "+cls:"");b.textContent=txt;b.onclick=fn;box.appendChild(b)};
   if(onLine){mk("↩ חזרה לערוץ "+deptName(curDept),"back",leaveLine);return}
   for(const h of DEPTS.filter(x=>x.hub)){if(h.id===curDept)mk("📞 פתיחת קו הקריאות של "+h.n,"",()=>joinLine(h.id,false));else mk("📞 קריאה ל"+h.n,"",()=>joinLine(h.id,true))}}
