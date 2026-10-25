@@ -323,10 +323,15 @@ function ensureAC(){ try{if(navigator.audioSession&&navigator.audioSession.type!
   if(!ac){ac=new (window.AudioContext||window.webkitAudioContext)()} if(ac.state==="suspended")ac.resume(); }
 function tone(f,t0,d,v=.16){const o=ac.createOscillator(),g=ac.createGain();o.type="square";o.frequency.value=f;
   g.gain.setValueAtTime(v,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g).connect(ac.destination);o.start(t0);o.stop(t0+d+.02)}
+// quick rising "chirp" burst, like the classic push-to-talk radios
+function sweep(f1,f2,t0,d,v=.26){const o=ac.createOscillator(),g=ac.createGain(),lp=ac.createBiquadFilter();o.type="square";
+  o.frequency.setValueAtTime(f1,t0);o.frequency.linearRampToValueAtTime(f2,t0+d);lp.type="lowpass";lp.frequency.value=5200;
+  g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v,t0+.004);g.gain.setValueAtTime(v,t0+d-.008);g.gain.linearRampToValueAtTime(.0001,t0+d);
+  o.connect(lp).connect(g).connect(ac.destination);o.start(t0);o.stop(t0+d+.02)}
+function mirsChirp(t){sweep(1750,2450,t,.038);sweep(1750,2450,t+.078,.038)}
 function chirp(kind,at){ if(!ac)return; const t=Math.max(ac.currentTime,at||0);
-  if(kind==="start"){tone(1950,t,.05);tone(2350,t+.06,.05);tone(1950,t+.12,.07)}
-  else if(kind==="end"){tone(2350,t,.05);tone(1650,t+.06,.08)}
-  else if(kind==="in"){tone(1650,t,.05);tone(2150,t+.07,.06)}
+  if(kind==="start"||kind==="in"){mirsChirp(t)}
+  else if(kind==="end"){tone(1500,t,.06,.14)}
   else if(kind==="busy"){tone(480,t,.18,.2);tone(480,t+.3,.18,.2)}
   else if(kind==="alert"){for(let i=0;i<3;i++)tone(2600,t+i*.18,.1,.15)} }
 function muEnc(s){s=Math.max(-1,Math.min(1,s));let x=Math.round(s*32767);const sign=x<0?0x80:0;if(x<0)x=-x;x+=132;if(x>32635)x=32635;
