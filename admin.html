@@ -6,13 +6,17 @@
 <meta name="robots" content="noindex">
 <title>ניהול מירס</title>
 <link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--page:#D3D6D8;--ink:#2A2E31;--soft:#5C6266;--card:#fff;--line:#C4C8CB;--dark:#24292E;--safety:#F2B705;--red:#D64535;--green:#3FA34D}
-@media (prefers-color-scheme:dark){:root{--page:#1A1D1F;--ink:#E3E5E6;--soft:#9BA2A7;--card:#24292E;--line:#3A4148}}
+:root{--page:#EAF6F6;--ink:#1E293B;--soft:#41556B;--card:#fff;--line:#C5E0DF;--dark:#0B4F50;--safety:#F59E0B;--red:#D64535;--green:#2E9E5B;--teal:#008080}
+@media (prefers-color-scheme:dark){:root{--page:#08191B;--ink:#E3EFEF;--soft:#9DB7B9;--card:#10292C;--line:#1F4447}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--page);color:var(--ink);font-family:"Rubik","Arial Hebrew",Arial,sans-serif;padding:20px 16px 110px}
+body{margin:0;background:var(--page);color:var(--ink);font-family:"Assistant","Arial Hebrew",Arial,sans-serif;padding:20px 16px 110px}
 h1{margin:0 0 4px;font-size:1.6rem;font-weight:900;text-align:center}
 h1 em{font-style:normal;color:var(--safety)}
+h1{color:var(--teal)}
+.city{display:block;width:max-content;margin:0 auto 8px;padding:4px 14px;border-radius:99px;background:var(--teal);color:#fff;font-size:.8rem;font-weight:700}
 .sub{text-align:center;color:var(--soft);margin:0 0 20px;font-size:.9rem}
 .wrap{max-width:640px;margin:0 auto}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
@@ -29,7 +33,7 @@ button:disabled{opacity:.5;cursor:default}
 .row>div{flex:1}
 .btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .hubl{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.9rem;color:var(--ink);cursor:pointer}
-.hubl input{width:20px;height:20px;accent-color:#3B7DD8}
+.hubl input{width:20px;height:20px;accent-color:#008080}
 .hint{font-size:.8rem;color:var(--soft);margin:6px 0 0}
 .warn{color:var(--red)}
 .bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:10px;justify-content:center;align-items:center}
@@ -40,6 +44,7 @@ button:disabled{opacity:.5;cursor:default}
 </head>
 <body>
 <div class="wrap">
+  <span class="city">🌴 עיריית אילת</span>
   <h1>מירס<em>.</em> ניהול</h1>
   <p class="sub">קודים למחלקות. כל קוד מחבר עובדים לערוץ של המחלקה שלו.</p>
 
@@ -66,7 +71,7 @@ const API="/.netlify/functions/depts", $=id=>document.getElementById(id);
 let pw="", depts=[], dirty=false;
 try{pw=sessionStorage.getItem("mirs-admin")||""}catch(e){}
 
-const ERR={auth:"סיסמה שגויה.","no-admin":"עוד לא הוגדרה סיסמת מנהל ב-Netlify (ADMIN_PASSWORD).",name:"לכל מחלקה צריך שם.",short:"קוד קצר מדי (לפחות 6 תווים)",dup:"אותו קוד מופיע פעמיים",nocode:"חסר קוד",bad:"שגיאה בבקשה."};
+const ERR={locked:"יותר מדי ניסיונות שגויים. נסו שוב בעוד 15 דקות.",auth:"סיסמה שגויה.","no-admin":"עוד לא הוגדרה סיסמת מנהל ב-Netlify (ADMIN_PASSWORD).",name:"לכל מחלקה צריך שם.",short:"קוד קצר מדי (לפחות 6 תווים)",dup:"אותו קוד מופיע פעמיים",nocode:"חסר קוד",bad:"שגיאה בבקשה."};
 async function call(body){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","x-admin":pw},body:JSON.stringify(body)});
   const j=await r.json().catch(()=>({ok:false,error:"bad"}));
