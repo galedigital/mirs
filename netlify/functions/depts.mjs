@@ -25,12 +25,29 @@ const tagOf = (code) => pbkdf2Sync(code, "mirs-channel-v3", 150000, 64, "sha256"
 const json = (data, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 const sameSecret = (a, b) => timingSafeEqual(createHash("sha256").update(String(a)).digest(), createHash("sha256").update(String(b)).digest());
 
+// brute-force guard: after MAX failed attempts from one IP, block it for LOCK ms
+const MAX = 10, LOCK = 15 * 60 * 1000;
+const ipOf = (req, ctx) => (ctx && ctx.ip) || req.headers.get("x-nf-client-connection-ip") || "x";
+const failKey = (ip) => "fail-" + createHash("sha256").update(ip).digest("hex").slice(0, 24);
+async function blocked(store, ip) {
+  const f = await store.get(failKey(ip), { type: "json" }).catch(() => null);
+  return !!(f && f.n >= MAX && Date.now() - f.at < LOCK);
+}
+async function fail(store, ip) {
+  const k = failKey(ip), now = Date.now();
+  const f = (await store.get(k, { type: "json" }).catch(() => null)) || { n: 0, at: now };
+  const n = now - f.at > LOCK ? 1 : f.n + 1;
+  await store.setJSON(k, { n, at: now });
+  await new Promise((r) => setTimeout(r, 800));
+}
+const clearFail = (store, ip) => store.delete(failKey(ip)).catch(() => {});
+
 async function load(store) {
   const d = await store.get("depts", { type: "json" });
   return Array.isArray(d) ? d : SEED.map((x) => ({ ...x, code: "" }));
 }
 
-export default async (req) => {
+export default async (req, ctx) => {
   const store = getStore({ name: "mirs", consistency: "strong" });
 
   if (req.method === "GET") {
@@ -42,11 +59,14 @@ export default async (req) => {
   let b;
   try { b = await req.json(); } catch { return json({ ok: false, error: "bad" }, 400); }
 
+  const ip = ipOf(req, ctx);
+  if (await blocked(store, ip)) return json({ ok: false, error: "locked" }, 429);
+
   if (b.action === "line") {
     const list = await load(store), code = norm(b.code);
     const me = code.length >= 6 && list.find((x) => x.t === tagOf(code));
     const hub = list.find((x) => x.id === b.hub && x.hub);
-    if (!me || !hub) { await new Promise((r) => setTimeout(r, 800)); return json({ ok: false, error: "auth" }, 403); }
+    if (!me || !hub) { await fail(store, ip); return json({ ok: false, error: "auth" }, 403); }
     let secret = await store.get("line-secret");
     if (!secret) { secret = randomBytes(32).toString("hex"); await store.set("line-secret", secret); }
     return json({ ok: true, key: createHmac("sha256", secret).update("line:" + hub.id).digest("hex") });
@@ -55,9 +75,10 @@ export default async (req) => {
   const pass = process.env.ADMIN_PASSWORD;
   if (!pass) return json({ ok: false, error: "no-admin" }, 503);
   if (!sameSecret(req.headers.get("x-admin") || "", pass)) {
-    await new Promise((r) => setTimeout(r, 800));
+    await fail(store, ip);
     return json({ ok: false, error: "auth" }, 401);
   }
+  await clearFail(store, ip);
 
   const current = await load(store);
 
