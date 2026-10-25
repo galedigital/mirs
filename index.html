@@ -109,6 +109,19 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
 .brand p{margin:6px 0 0;font-size:.9rem;color:var(--page-soft)}
 .copy{margin-top:28px;font-size:.72rem;color:var(--page-soft);opacity:.85;text-align:center}
 @media (prefers-reduced-motion:reduce){.live .wave i{animation:none;height:14px}}
+.guide-btn{margin-top:14px;border:1.5px solid var(--page-soft);background:transparent;color:var(--page-ink);font:inherit;font-weight:700;font-size:.9rem;padding:8px 18px;border-radius:99px;cursor:pointer}
+.guide{border:0;padding:0;border-radius:18px;width:min(420px,calc(100vw - 32px));max-height:calc(100dvh - 48px);background:var(--page);color:var(--page-ink);box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.guide::backdrop{background:rgba(10,12,14,.6)}
+.guide .gh{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--body);color:var(--key-ink)}
+.guide .gh h2{margin:0;font-size:1.15rem;font-weight:900}
+.guide .gx{border:0;background:var(--key);color:var(--key-ink);width:36px;height:36px;border-radius:50%;font-size:1.1rem;cursor:pointer}
+.guide .gb{padding:6px 18px 20px;line-height:1.65;font-size:.93rem}
+.guide h3{margin:18px 0 6px;font-size:1rem;font-weight:700}
+.guide ol,.guide ul{margin:0;padding-inline-start:20px}
+.guide li{margin:3px 0}
+.guide .tag{display:inline-block;padding:0 8px;border-radius:6px;font-weight:700;font-size:.85rem;color:#fff}
+.guide .t-y{background:var(--safety);color:#1A1400}.guide .t-g{background:var(--green)}.guide .t-b{background:#3B7DD8}.guide .t-r{background:var(--red)}.guide .t-k{background:var(--key)}
+.guide .note{margin-top:16px;padding:10px 12px;border-radius:10px;background:rgba(242,183,5,.16);font-size:.87rem}
 </style>
 </head>
 <body>
@@ -171,6 +184,45 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
 <button class="install" id="install">התקנה כאפליקציה</button>
 <button class="install" id="pushBtn"></button>
 <p class="hint" id="iosHint" hidden>להתקנה באייפון: כפתור השיתוף בספארי ואז ״הוספה למסך הבית״.</p>
+<button class="guide-btn" id="guideBtn" aria-haspopup="dialog">מדריך שימוש</button>
+<dialog class="guide" id="guide" aria-labelledby="guideTitle">
+  <div class="gh"><h2 id="guideTitle">איך משתמשים במירס</h2><button class="gx" id="guideX" aria-label="סגירת המדריך">✕</button></div>
+  <div class="gb">
+    <h3>1. הפעלה</h3>
+    <ol>
+      <li>מקלידים שם, כדי שהצד השני ידע מי מדבר.</li>
+      <li>מקלידים מספר ערוץ. כל מי שבאותו ערוץ שומע אחד את השני.</li>
+      <li>לוחצים <b>הפעלה</b> ומאשרים גישה למיקרופון.</li>
+    </ol>
+    <h3>2. בוחרים למי לדבר</h3>
+    <ul>
+      <li>ברשימת אנשי הקשר בוחרים עם החיצים <span class="tag t-k">▲ ▼</span> אדם מסוים, או <b>כל המחוברים</b>.</li>
+      <li><span class="tag t-k">◀◀</span> אנשי קשר, <span class="tag t-k">▶▶</span> היסטוריה.</li>
+    </ul>
+    <h3>3. מדברים</h3>
+    <ul>
+      <li>מחזיקים את <span class="tag t-y">לחץ ודבר</span> (או את הכפתור הצהוב בצד), מדברים, ומשחררים כדי להקשיב.</li>
+      <li>רק אחד מדבר בכל פעם, כמו במכשיר קשר.</li>
+    </ul>
+    <h3>4. הכפתורים</h3>
+    <ul>
+      <li><span class="tag t-g">התראה</span> מצלצל לצד השני ומבקש שיחזור אליכם. מגיע גם כהתראה בטלפון כשהאפליקציה סגורה.</li>
+      <li><span class="tag t-b">מיקום</span> שולח את המיקום שלכם. מי שמקבל רואה כפתורי Waze ו-Google Maps לניווט אליכם.</li>
+      <li><span class="tag t-r">ניתוק</span> עוצר שידור, האזנה או השמעה.</li>
+    </ul>
+    <h3>5. הקלטות והיסטוריה</h3>
+    <ul>
+      <li>כל שיחה ומיקום נשמרים בהיסטוריה (<span class="tag t-k">▶▶</span>).</li>
+      <li>בוחרים שורה עם החיצים ולוחצים <b>OK</b> כדי לשמוע שוב או לפתוח מיקום.</li>
+    </ul>
+    <h3>6. התקנה והתראות</h3>
+    <ul>
+      <li>לוחצים <b>התקנה כאפליקציה</b>. באייפון: כפתור השיתוף בספארי ואז ״הוספה למסך הבית״.</li>
+      <li>מאשרים התראות כדי לקבל קריאות גם כשהאפליקציה סגורה.</li>
+    </ul>
+    <div class="note">שימו לב: ההיסטוריה נשמרת רק עד שסוגרים או מרעננים את האפליקציה (עד 40 פריטים). מיקום מגיע רק למי שהאפליקציה פתוחה אצלו.</div>
+  </div>
+</dialog>
 <footer class="copy">© 2026 גל מהדיגיטל. כל הזכויות שמורות.</footer>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.14.1/dist/mqtt.min.js"></script>
 
@@ -445,6 +497,12 @@ $("powerBtn").onclick=async()=>{
 };
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&ac)ac.resume()});
 render();
+</script>
+<script>
+(()=>{const d=document.getElementById("guide"),b=document.getElementById("guideBtn");
+b.onclick=()=>{if(d.showModal)d.showModal();else d.setAttribute("open","")};
+document.getElementById("guideX").onclick=()=>d.close?d.close():d.removeAttribute("open");
+d.addEventListener("click",e=>{if(e.target===d)d.close()});})();
 </script>
 </body>
 </html>
