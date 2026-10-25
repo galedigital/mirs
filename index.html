@@ -674,7 +674,7 @@ $("powerBtn").onclick=async()=>{
   $("powerBtn").disabled=true;$("powerMsg").textContent="בודק קוד…";
   await refreshDepts(); await deriveChannel(code);
   let d=DEPTS.find(x=>x.t===codeTag);
-  isTest=!d&&/^0000\d{6}$/.test(code);
+  isTest=!d&&/^0000\d{5,6}$/.test(code);
   if(isTest){const hb=/^00009\d{5}$/.test(code);d={id:hb?"testhub":"test",n:hb?"🧪 מוקד בדיקה":"🧪 ערוץ בדיקה",t:codeTag,hub:hb};
     try{localStorage.setItem("mirs-test",JSON.stringify({code,dept:d.id,exp:Date.now()+3*3600e3}))}catch(e){}}
   if(!d){$("powerBtn").disabled=false;
