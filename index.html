@@ -199,11 +199,35 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
   <button class="ptt" id="ptt">לחץ ודבר<span>החזיקו לשידור, שחררו להאזנה</span></button>
 </div>
 <p class="hint">פותחים את הקישור בשני טלפונים או יותר, מקלידים שם וקוד מחלקה, בוחרים למי לדבר ומחזיקים את הכפתור הצהוב. הקול עובר בזמן אמת ומוצפן, ורק מי שיש לו את קוד המחלקה שומע.</p>
-<button class="install" id="install">התקנה כאפליקציה</button>
+<button class="install" id="install">📲 התקנה כאפליקציה</button>
 <button class="install" id="pushBtn"></button>
 <div id="lineBtns" class="line-btns"></div>
 <button class="install" id="shareBtn">📤 שליחת הקוד לעובד</button>
 <p class="hint" id="iosHint" hidden>להתקנה באייפון: כפתור השיתוף בספארי ואז ״הוספה למסך הבית״.</p>
+<dialog class="guide" id="instHelp" aria-labelledby="instTitle">
+  <div class="gh"><h2 id="instTitle">התקנת מירס בטלפון</h2><button class="gx" id="instX" aria-label="סגירה">✕</button></div>
+  <div class="gb">
+    <div id="instIos" hidden>
+      <h3>אייפון</h3>
+      <ol>
+        <li>פותחים את האתר ב<b>ספארי</b> (לא בוואטסאפ ולא בכרום).</li>
+        <li>לוחצים על כפתור <b>השיתוף</b> (ריבוע עם חץ למעלה) בתחתית המסך.</li>
+        <li>גוללים ובוחרים <b>״הוספה למסך הבית״</b>, ואז <b>הוסף</b>.</li>
+        <li>פותחים את מירס מהאייקון במסך הבית, ומאשרים התראות.</li>
+      </ol>
+      <div class="note">באייפון התראות על קריאות מגיעות רק כשמירס פתוח מהאייקון במסך הבית.</div>
+    </div>
+    <div id="instAndroid" hidden>
+      <h3>אנדרואיד</h3>
+      <ol>
+        <li>פותחים את האתר ב<b>כרום</b> (אם נפתח מתוך וואטסאפ: שלוש נקודות ← ״פתיחה בכרום״).</li>
+        <li>לוחצים על <b>שלוש הנקודות</b> למעלה.</li>
+        <li>בוחרים <b>״התקנת אפליקציה״</b> או <b>״הוספה למסך הבית״</b>.</li>
+        <li>פותחים את מירס מהאייקון ומאשרים התראות.</li>
+      </ol>
+    </div>
+  </div>
+</dialog>
 <button class="guide-btn" id="guideBtn" aria-haspopup="dialog">מדריך שימוש</button>
 <dialog class="guide" id="guide" aria-labelledby="guideTitle">
   <div class="gh"><h2 id="guideTitle">איך משתמשים במירס</h2><button class="gx" id="guideX" aria-label="סגירת המדריך">✕</button></div>
@@ -542,10 +566,17 @@ function ring(to,kind,extra){
 
 /* ---------- app install ---------- */
 let instEv=null;
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();instEv=e;$("install").classList.add("show")});
-$("install").onclick=async()=>{if(!instEv)return;instEv.prompt();try{await instEv.userChoice}catch(e){}instEv=null;$("install").classList.remove("show")};
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();instEv=e});
 const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
-if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!standalone)$("iosHint").hidden=false;
+const isIos=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+// always offer installing (unless already installed): native prompt when the browser has one, otherwise step-by-step help
+if(!standalone)$("install").classList.add("show");
+$("install").onclick=async()=>{
+  if(instEv){instEv.prompt();try{const c=await instEv.userChoice;if(c&&c.outcome==="accepted")$("install").classList.remove("show")}catch(e){}instEv=null;return}
+  $("instIos").hidden=!isIos;$("instAndroid").hidden=isIos;const d=$("instHelp");d.showModal?d.showModal():d.setAttribute("open","")};
+$("instX").onclick=()=>$("instHelp").close?$("instHelp").close():$("instHelp").removeAttribute("open");
+$("instHelp").addEventListener("click",e=>{if(e.target===$("instHelp"))$("instHelp").close()});
+window.addEventListener("appinstalled",()=>$("install").classList.remove("show"));
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js",{scope:"/"}).catch(()=>{}));
 $("pushBtn").onclick=async()=>{if(!OS)return;try{await OS.Notifications.requestPermission()}catch(e){}tagPush();updatePushUI()};
 initPush();
