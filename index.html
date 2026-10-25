@@ -359,7 +359,8 @@ async function refreshDepts(){try{const ctl=new AbortController(),tm=setTimeout(
   const d=await r.json();if(Array.isArray(d)&&d.length&&d.every(x=>x&&x.id&&x.t)){DEPTS=d;try{localStorage.setItem("mirs-depts",JSON.stringify(d))}catch(e){}}}catch(e){}}
 refreshDepts().then(()=>{if(!powered)showCode()});
 // t = one-way fingerprint of the department code (the code itself is not stored here)
-const deptName=id=>(DEPTS.find(d=>d.id===id)||{n:"ערוץ"}).n;
+const TEST_HUB={id:"testhub",n:"מוקד בדיקה",hub:true};
+const deptName=id=>id==="testhub"?TEST_HUB.n:id==="test"?"ערוץ בדיקה":(DEPTS.find(d=>d.id===id)||{n:"ערוץ"}).n;
 
 async function deriveChannel(code){
   const base=await crypto.subtle.importKey("raw",TE.encode(code),"PBKDF2",false,["deriveBits"]);
@@ -646,7 +647,7 @@ function drawSel(){const a=savedCh(),S=$("chSel");S.replaceChildren();
   a.forEach(x=>{const o=document.createElement("option");o.value=x.code;o.textContent=deptName(x.dept);S.appendChild(o)});
   const o=document.createElement("option");o.value="";o.textContent="➕ קוד חדש";S.appendChild(o);
   S.value=deptCode&&a.some(x=>x.code===deptCode)?deptCode:"";
-  const show=a.length>0;S.hidden=!show;$("chSelLbl").hidden=!show}
+  const show=a.length>0&&!/^0000/.test(deptCode);S.hidden=!show;$("chSelLbl").hidden=!show}
 function showCode(){const has=normCode(deptCode).length>=6;drawSel();
   $("chLbl").hidden=has;$("chIn").hidden=has;$("newCode").hidden=true;
   $("powerMsg").textContent=has?"מחלקה: "+deptName(curDept)+". מקלידים שם ולוחצים הפעלה.":"בפעם הראשונה צריך את קוד המחלקה מהמנהל.";
@@ -654,10 +655,12 @@ function showCode(){const has=normCode(deptCode).length>=6;drawSel();
 try{$("nameIn").value=localStorage.getItem("mirs-name")||"";deptCode=localStorage.getItem("mirs-code")||"";curDept=localStorage.getItem("mirs-dept")||""}catch(e){}
 if(deptCode&&curDept&&!savedCh().some(x=>x.code===deptCode))rememberCh(deptCode,curDept);
 if(pendingLine){const m=savedCh().find(x=>x.dept===pendingLine);if(m){deptCode=m.code;curDept=m.dept}}
+if(pendingLine==="testhub"){try{const t=JSON.parse(localStorage.getItem("mirs-test")||"null");if(t&&t.exp>Date.now()&&t.dept==="testhub"){deptCode=t.code;curDept="testhub"}}catch(e){}}
+try{const t=JSON.parse(localStorage.getItem("mirs-test")||"null");if(t&&t.exp<=Date.now())localStorage.removeItem("mirs-test")}catch(e){}
 showCode();
 $("chSel").onchange=()=>{const v=$("chSel").value,m=savedCh().find(x=>x.code===v);
   if(m){deptCode=m.code;curDept=m.dept;showCode()}else{deptCode="";curDept="";$("chIn").value="";showCode();$("chIn").focus()}};
-$("swBtn").onclick=()=>location.reload();
+$("swBtn").onclick=()=>{try{localStorage.removeItem("mirs-test")}catch(e){}location.reload()};
 if(location.hash)try{window.history.replaceState(null,"",location.pathname)}catch(e){}
 $("newCode").onclick=()=>{deptCode="";curDept="";$("chIn").value="";showCode();$("chIn").focus()};
 $("nameIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("powerBtn").click()});
@@ -672,7 +675,8 @@ $("powerBtn").onclick=async()=>{
   await refreshDepts(); await deriveChannel(code);
   let d=DEPTS.find(x=>x.t===codeTag);
   isTest=!d&&/^0000\d{6}$/.test(code);
-  if(isTest)d={id:"test",n:"🧪 ערוץ בדיקה",t:codeTag,hub:false};
+  if(isTest){const hb=/^00009\d{5}$/.test(code);d={id:hb?"testhub":"test",n:hb?"🧪 מוקד בדיקה":"🧪 ערוץ בדיקה",t:codeTag,hub:hb};
+    try{localStorage.setItem("mirs-test",JSON.stringify({code,dept:d.id,exp:Date.now()+3*3600e3}))}catch(e){}}
   if(!d){$("powerBtn").disabled=false;
     if(deptCode){forgetCh(deptCode);deptCode="";curDept="";try{localStorage.removeItem("mirs-code")}catch(e){}showCode();$("powerMsg").textContent="קוד המחלקה הוחלף. בקשו את הקוד החדש מהמנהל."}
     else $("powerMsg").textContent="הקוד לא מוכר. בדקו שהקלדתם נכון.";
@@ -692,13 +696,14 @@ $("powerBtn").onclick=async()=>{
 };
 /* ---------- call line: any department can call a hub (e.g. the Moked) ---------- */
 async function getLine(hub){
+  if(hub==="testhub"){if(!isTest)return "";const h=new Uint8Array(await crypto.subtle.digest("SHA-256",TE.encode("mirs-test-line-v1")));return Array.from(h,x=>x.toString(16).padStart(2,"0")).join("")}
   try{const c=JSON.parse(localStorage.getItem("mirs-line-"+hub)||"null");if(c&&c.code===deptCode&&c.key)return c.key}catch(e){}
   try{const r=await fetch("/.netlify/functions/depts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"line",code:deptCode,hub})});
     const j=await r.json();if(!j.ok)return "";try{localStorage.setItem("mirs-line-"+hub,JSON.stringify({code:deptCode,key:j.key}))}catch(e){}return j.key}catch(e){return ""}}
-function drawLineBtns(){const box=$("lineBtns");box.replaceChildren();if(!powered||isTest)return;
+function drawLineBtns(){const box=$("lineBtns");box.replaceChildren();if(!powered)return;
   const mk=(txt,cls,fn)=>{const b=document.createElement("button");b.className="install show"+(cls?" "+cls:"");b.textContent=txt;b.onclick=fn;box.appendChild(b)};
   if(onLine){mk("↩ חזרה לערוץ "+deptName(curDept),"back",leaveLine);return}
-  for(const h of DEPTS.filter(x=>x.hub)){if(h.id===curDept)mk("📞 פתיחת קו הקריאות של "+h.n,"",()=>joinLine(h.id,false));else mk("📞 קריאה ל"+h.n,"",()=>joinLine(h.id,true))}}
+  for(const h of (isTest?[TEST_HUB]:DEPTS.filter(x=>x.hub))){if(h.id===curDept)mk("📞 פתיחת קו הקריאות של "+h.n,"",()=>joinLine(h.id,false));else mk("📞 קריאה ל"+h.n,"",()=>joinLine(h.id,true))}}
 function resetNet(){seen.clear();roster=[];if(rx.id)endRx();sel="all";tab="contacts"}
 async function joinLine(hub,caller){
   if(!powered)return; ensureAC();
