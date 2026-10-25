@@ -167,11 +167,9 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
         <div class="over show" id="power">
           <label for="nameIn">שם המכשיר</label>
           <input id="nameIn" maxlength="18" placeholder="למשל: דנה" autocomplete="off">
-          <label for="deptIn">מחלקה</label>
-          <select id="deptIn"></select>
-          <label for="chIn" id="chLbl">קוד עירייה (פעם אחת)</label>
-          <input id="chIn" maxlength="30" inputmode="numeric" autocomplete="off" aria-describedby="powerMsg">
-          <button type="button" id="newCode" hidden>החלפת קוד עירייה</button>
+          <label for="chIn" id="chLbl">קוד המחלקה</label>
+          <input id="chIn" maxlength="20" inputmode="numeric" autocomplete="off" placeholder="10 ספרות, מקבלים מהמנהל" aria-describedby="powerMsg">
+          <button type="button" id="newCode" hidden>החלפת מחלקה / קוד</button>
           <button id="powerBtn">הפעלה</button>
           <p id="powerMsg">הדפדפן יבקש גישה למיקרופון.</p>
         </div>
@@ -197,10 +195,10 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
   </div>
   <button class="ptt" id="ptt">לחץ ודבר<span>החזיקו לשידור, שחררו להאזנה</span></button>
 </div>
-<p class="hint">פותחים את הקישור בשני טלפונים או יותר, מקלידים שם ובוחרים מחלקה, בוחרים למי לדבר ומחזיקים את הכפתור הצהוב. הקול עובר בזמן אמת ומוצפן, ורק מי שיש לו את קוד העירייה שומע.</p>
+<p class="hint">פותחים את הקישור בשני טלפונים או יותר, מקלידים שם וקוד מחלקה, בוחרים למי לדבר ומחזיקים את הכפתור הצהוב. הקול עובר בזמן אמת ומוצפן, ורק מי שיש לו את קוד המחלקה שומע.</p>
 <button class="install" id="install">התקנה כאפליקציה</button>
 <button class="install" id="pushBtn"></button>
-<button class="install" id="shareBtn">➕ צירוף אנשים לערוץ</button>
+<button class="install" id="shareBtn">📤 שליחת הקוד לעובד</button>
 <p class="hint" id="iosHint" hidden>להתקנה באייפון: כפתור השיתוף בספארי ואז ״הוספה למסך הבית״.</p>
 <button class="guide-btn" id="guideBtn" aria-haspopup="dialog">מדריך שימוש</button>
 <dialog class="guide" id="guide" aria-labelledby="guideTitle">
@@ -209,8 +207,8 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
     <h3>1. הפעלה</h3>
     <ol>
       <li>מקלידים שם, כדי שהצד השני ידע מי מדבר.</li>
-      <li>בוחרים את המחלקה מהרשימה.</li>
-      <li>בפעם הראשונה בלבד מקלידים את <b>קוד העירייה</b> (מקבלים מהממונה, או סורקים ברקוד של עמית בכפתור <b>➕ צירוף אנשים לערוץ</b>). מהפעם השנייה הוא שמור.</li>
+      <li>בפעם הראשונה מקלידים את <b>קוד המחלקה</b> (10 ספרות, מקבלים מהמנהל). האפליקציה מזהה לבד לאיזו מחלקה הוא שייך ומחברת לערוץ שלה.</li>
+      <li>מהפעם השנייה הקוד שמור, ורק לוחצים הפעלה.</li>
       <li>לוחצים <b>הפעלה</b> ומאשרים גישה למיקרופון.</li>
     </ol>
     <h3>2. בוחרים למי לדבר</h3>
@@ -239,19 +237,7 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
       <li>לוחצים <b>התקנה כאפליקציה</b>. באייפון: כפתור השיתוף בספארי ואז ״הוספה למסך הבית״.</li>
       <li>מאשרים התראות כדי לקבל קריאות גם כשהאפליקציה סגורה.</li>
     </ul>
-    <div class="note">🔒 השיחות, השמות והמיקומים מוצפנים. רק מי שיש לו את קוד הערוץ יכול לשמוע, אז שתפו אותו רק עם מי שצריך.<br>שימו לב: ההיסטוריה נשמרת רק עד שסוגרים או מרעננים את האפליקציה (עד 40 פריטים). מיקום מגיע רק למי שהאפליקציה פתוחה אצלו.</div>
-  </div>
-</dialog>
-<dialog class="guide" id="invite" aria-labelledby="invTitle">
-  <div class="gh"><h2 id="invTitle">צירוף לערוץ</h2><button class="gx" id="invX" aria-label="סגירה">✕</button></div>
-  <div class="gb inv">
-    <p class="inv-step">עובד חדש סורק את הברקוד עם מצלמת הטלפון, ונכנס ישר לערוץ</p>
-    <div class="qr" id="invQr" role="img" aria-label="ברקוד להצטרפות לערוץ"></div>
-    <p class="inv-step">או: אומרים לו את קוד העירייה, והוא בוחר מחלקה ומקליד</p>
-    <div class="code" id="invCode"></div>
-    <div class="inv-btns"><button type="button" id="invShare">📤 שליחת קישור</button></div>
-    <p class="inv-msg" id="invMsg" role="status"></p>
-    <div class="note">🔒 קוד העירייה רק לעובדי העירייה. מי שיש לו אותו יכול להאזין.</div>
+    <div class="note">🔒 השיחות, השמות והמיקומים מוצפנים. רק מי שיש לו את קוד המחלקה יכול לשמוע, אז אל תעבירו אותו מחוץ למחלקה.<br>שימו לב: ההיסטוריה נשמרת רק עד שסוגרים או מרעננים את האפליקציה (עד 40 פריטים). מיקום מגיע רק למי שהאפליקציה פתוחה אצלו.</div>
   </div>
 </dialog>
 <footer class="copy">© 2026 גל מהדיגיטל. כל הזכויות שמורות.</footer>
@@ -270,21 +256,21 @@ const history=[];
 // Every message is AES-GCM encrypted with a key derived from the channel code.
 // The relay only sees a random-looking topic and ciphertext.
 const BROKERS=["wss://broker.emqx.io:8084/mqtt","wss://broker.hivemq.com:8884/mqtt","wss://test.mosquitto.org:8081"];
-let clis=[],seen=new Map(),beat=null,aesKey=null,topic="",pushTag="",willPayload=null,outQ=Promise.resolve(),inQ=Promise.resolve();
+let clis=[],seen=new Map(),beat=null,aesKey=null,topic="",pushTag="",codeTag="",willPayload=null,outQ=Promise.resolve(),inQ=Promise.resolve();
 const dedup=new Map();
 const TE=new TextEncoder(),TD=new TextDecoder();
 const hex=a=>Array.from(a,b=>b.toString(16).padStart(2,"0")).join("");
 const FINALS={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
 function normCode(v){return String(v||"").toLowerCase().replace(/[ךםןףץ]/g,c=>FINALS[c]).replace(/[^a-z0-9\u05d0-\u05ea]/g,"").slice(0,30)}
-const DEPTS=[{id:"moked",n:"מוקד"},{id:"env",n:"איכות הסביבה"},{id:"dover",n:"דוברות"},{id:"beaches",n:"חופים"},{id:"tikshuv",n:"תקשוב"},{id:"shefa",n:"שפ״ע / תברואה"},{id:"pikuach",n:"פיקוח ואכיפה"},{id:"bitachon",n:"ביטחון וחירום"}];
-const deptName=id=>(DEPTS.find(d=>d.id===id)||DEPTS[0]).n;
-// one city code (known only to staff) + department = the channel key
-const keyFor=(dept,org)=>"org:"+normCode(org)+":dept:"+dept;
+const DEPTS=[{id:"moked",n:"מוקד",t:"a156735a33712b71"},{id:"env",n:"איכות הסביבה",t:"693fb8f346b07c67"},{id:"dover",n:"דוברות",t:"4f0fac11d079bcd0"},{id:"beaches",n:"חופים",t:"cbd81a76647baf7f"},{id:"tikshuv",n:"תקשוב",t:"4d3f39f77fd5d515"},{id:"shefa",n:"שפ״ע / תברואה",t:"333c61c16907ebcf"},{id:"pikuach",n:"פיקוח ואכיפה",t:"7c5c2d3d17c2b8cb"},{id:"bitachon",n:"ביטחון וחירום",t:"9cc7287503a484cc"}];
+// t = one-way fingerprint of the department code (the code itself is not stored here)
+const deptName=id=>(DEPTS.find(d=>d.id===id)||{n:"ערוץ"}).n;
+
 async function deriveChannel(code){
   const base=await crypto.subtle.importKey("raw",TE.encode(code),"PBKDF2",false,["deriveBits"]);
   const bits=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:TE.encode("mirs-channel-v3"),iterations:150000,hash:"SHA-256"},base,512));
   aesKey=await crypto.subtle.importKey("raw",bits.slice(0,32),"AES-GCM",false,["encrypt","decrypt"]);
-  topic="mirs3/"+hex(bits.slice(32,48)); pushTag=hex(bits.slice(48,56));
+  topic="mirs3/"+hex(bits.slice(32,48)); pushTag=hex(bits.slice(48,56)); codeTag=hex(bits.slice(56,64));
 }
 async function seal(obj){const iv=crypto.getRandomValues(new Uint8Array(12));
   const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},aesKey,TE.encode(JSON.stringify(obj))));
@@ -540,54 +526,41 @@ $("pushBtn").onclick=async()=>{if(!OS)return;try{await OS.Notifications.requestP
 initPush();
 
 /* ---------- power on ---------- */
-let org="",curDept="moked";
-$("deptIn").innerHTML=DEPTS.map(d=>`<option value="${d.id}">${d.n}</option>`).join("");
-function showOrg(){const has=normCode(org).length>=6;
+let deptCode="",curDept="";
+function showCode(){const has=normCode(deptCode).length>=6;
   $("chLbl").hidden=has;$("chIn").hidden=has;$("newCode").hidden=!has;
-  $("powerMsg").textContent=has?"מקלידים שם, בוחרים מחלקה ולוחצים הפעלה.":"בפעם הראשונה צריך את קוד העירייה. מקבלים מהממונה."}
-{let dept="moked";
-  try{$("nameIn").value=localStorage.getItem("mirs-name")||"";dept=localStorage.getItem("mirs-dept")||"moked";org=localStorage.getItem("mirs-org")||""}catch(e){}
-  const q=new URLSearchParams(decodeURIComponent(location.hash.slice(1)));let invited=false;
-  if(q.get("o")&&normCode(q.get("o")).length>=6){org=q.get("o");invited=true;try{localStorage.setItem("mirs-org",org)}catch(e){}}
-  if(DEPTS.some(x=>x.id===q.get("d")))dept=q.get("d");
-  if(!DEPTS.some(x=>x.id===dept))dept="moked";
-  $("deptIn").value=dept;showOrg();
-  if(invited)$("powerMsg").textContent="קוד העירייה נשמר. מקלידים שם ולוחצים הפעלה.";
-  if(location.hash)try{window.history.replaceState(null,"",location.pathname)}catch(e){}}
-$("newCode").onclick=()=>{org="";$("chIn").value="";showOrg();$("chIn").focus()};
+  $("powerMsg").textContent=has?"מחלקה: "+deptName(curDept)+". מקלידים שם ולוחצים הפעלה.":"בפעם הראשונה צריך את קוד המחלקה מהמנהל."}
+try{$("nameIn").value=localStorage.getItem("mirs-name")||"";deptCode=localStorage.getItem("mirs-code")||"";curDept=localStorage.getItem("mirs-dept")||""}catch(e){}
+if(!DEPTS.some(d=>d.id===curDept))deptCode="";
+showCode();
+if(location.hash)try{window.history.replaceState(null,"",location.pathname)}catch(e){}
+$("newCode").onclick=()=>{deptCode="";curDept="";$("chIn").value="";showCode();$("chIn").focus()};
 $("nameIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("powerBtn").click()});
 $("chIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("powerBtn").click()});
 $("powerBtn").onclick=async()=>{
   const n=$("nameIn").value.trim().slice(0,18); if(!n){$("powerMsg").textContent="צריך שם כדי שהצד השני ידע מי מדבר.";$("nameIn").focus();return}
-  if(normCode(org).length<6){const v=$("chIn").value.trim();
-    if(normCode(v).length<6){$("powerMsg").textContent="צריך את קוד העירייה (לפחות 6 תווים). מקבלים מהממונה.";$("chIn").focus();return}
-    org=v}
   if(!window.crypto||!crypto.subtle){$("powerMsg").textContent="הדפדפן לא תומך בהצפנה. פתחו את האתר בכתובת https.";return}
   if(typeof mqtt==="undefined"){$("powerMsg").textContent="רכיב החיבור לא נטען. בדקו אינטרנט ורעננו.";return}
-  const dept=$("deptIn").value; myName=n; curDept=dept;
-  try{localStorage.setItem("mirs-name",n);localStorage.setItem("mirs-dept",dept);localStorage.setItem("mirs-org",org)}catch(e){}
-  ensureAC(); chirp("in"); $("powerBtn").disabled=true; $("powerMsg").textContent="מבקש גישה למיקרופון…";
+  const code=normCode(deptCode||$("chIn").value);
+  if(code.length<6){$("powerMsg").textContent="צריך את קוד המחלקה (10 ספרות). מקבלים מהמנהל.";$("chIn").focus();return}
+  $("powerBtn").disabled=true;$("powerMsg").textContent="בודק קוד…";
+  await deriveChannel(code);
+  const d=DEPTS.find(x=>x.t===codeTag);
+  if(!d){$("powerBtn").disabled=false;$("powerMsg").textContent="הקוד לא מוכר. בדקו שהקלדתם נכון.";$("chIn").focus();return}
+  deptCode=code;curDept=d.id;myName=n;
+  try{localStorage.setItem("mirs-name",n);localStorage.setItem("mirs-code",code);localStorage.setItem("mirs-dept",d.id)}catch(e){}
+  ensureAC(); chirp("in"); $("powerMsg").textContent="מבקש גישה למיקרופון…";
   await setupMic(); powered=true; $("power").classList.remove("show");
-  curCh=dept; document.querySelector(".brand p").textContent="🔒 "+deptName(dept);
-  loadKnown();await startNet(keyFor(dept,org));tagPush();$("shareBtn").classList.add("show");
+  curCh=d.id; document.querySelector(".brand p").textContent="🔒 "+d.n;
+  loadKnown();await startNet(code);tagPush();$("shareBtn").classList.add("show");
   if(!micOk)showOver("אין מיקרופון","מצב האזנה בלבד","הדפדפן לא אישר גישה למיקרופון. אפשר עדיין לשמוע אחרים.",false,false);
   render();
 };
-/* ---------- invite: QR with city code + department ---------- */
-let qrLib=null;
-function loadQr(){if(window.qrcode)return Promise.resolve();if(qrLib)return qrLib;
-  qrLib=new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js";sc.onload=res;sc.onerror=()=>{qrLib=null;rej()};document.head.appendChild(sc)});return qrLib}
-const inviteUrl=()=>location.origin+"/#o="+encodeURIComponent(org)+"&d="+curDept;
-$("shareBtn").onclick=async()=>{if(!org)return;const dlg=$("invite");
-  $("invTitle").textContent="צירוף ל"+deptName(curDept);$("invCode").textContent="קוד העירייה: "+org;$("invMsg").textContent="";
-  $("invQr").textContent="טוען ברקוד…";dlg.showModal?dlg.showModal():dlg.setAttribute("open","");
-  try{await loadQr();const q=qrcode(0,"M");q.addData(inviteUrl());q.make();$("invQr").innerHTML=q.createSvgTag({cellSize:6,margin:2,scalable:true})}
-  catch(e){$("invQr").textContent="הברקוד לא נטען. אפשר לשלוח קישור או לומר את הקוד."}};
-$("invX").onclick=()=>$("invite").close?$("invite").close():$("invite").removeAttribute("open");
-$("invite").addEventListener("click",e=>{if(e.target===$("invite"))$("invite").close()});
-$("invShare").onclick=async()=>{const url=inviteUrl();
-  try{if(navigator.share){await navigator.share({title:"מירס",text:"הצטרפות לערוץ "+deptName(curDept)+" במירס",url});return}
-    await navigator.clipboard.writeText(url);$("invMsg").textContent="הקישור הועתק."}catch(e){if(!e||e.name!=="AbortError")$("invMsg").textContent="לא הצלחתי לשתף."}};
+/* ---------- send the department code to a colleague ---------- */
+$("shareBtn").onclick=async()=>{if(!deptCode)return;
+  const pretty=deptCode.slice(0,5)+"-"+deptCode.slice(5),text="קוד מירס למחלקת "+deptName(curDept)+": "+pretty+"\n"+location.origin;
+  try{if(navigator.share){await navigator.share({title:"מירס",text});return}await navigator.clipboard.writeText(text);alert("הקוד הועתק. הדביקו אותו בהודעה לעובד.")}
+  catch(e){if(!e||e.name!=="AbortError")alert(text)}};
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&ac)ac.resume()});
 render();
 </script>
