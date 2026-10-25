@@ -176,7 +176,11 @@ body{background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 60%,var(--sky2
 .install{box-shadow:0 8px 20px -8px rgba(245,158,11,.6)}
 .guide-btn{border-color:var(--teal);color:var(--teal-dk);background:rgba(255,255,255,.55);backdrop-filter:blur(6px)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .guide-btn{color:#BFEDEA;background:rgba(0,0,0,.25)}}
-.copy{color:var(--page-ink);opacity:.7}
+.copy{color:var(--page-ink);opacity:.85;background:rgba(255,255,255,.7);padding:4px 12px;border-radius:99px}
+.scene{height:min(46vh,340px)}
+.hint{background:rgba(255,255,255,.82);color:var(--page-ink);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:18px;padding:12px 16px;box-shadow:0 8px 24px -12px rgba(0,60,60,.35)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hint,:root:not([data-theme="light"]) .copy{background:rgba(6,23,26,.82)}}
+:root[data-theme="dark"] .hint,:root[data-theme="dark"] .copy{background:rgba(6,23,26,.82)}
 @media (prefers-reduced-motion:reduce){.wv,.ptt::after{animation:none}}
 </style>
 </head>
