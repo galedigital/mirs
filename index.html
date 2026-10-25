@@ -354,7 +354,7 @@ let DEPTS=[{id:"moked",n:"מוקד",t:"a156735a33712b71",hub:true},{id:"env",n:"
 // the list is managed from /admin; the built-in copy is only a fallback when offline
 try{const c=JSON.parse(localStorage.getItem("mirs-depts")||"null");if(Array.isArray(c)&&c.length)DEPTS=c}catch(e){}
 async function refreshDepts(){try{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),5000);
-  const r=await fetch("/.netlify/functions/depts",{cache:"no-store",signal:ctl.signal});clearTimeout(tm);
+  const r=await fetch("/api/depts",{cache:"no-store",signal:ctl.signal});clearTimeout(tm);
   const d=await r.json();if(Array.isArray(d)&&d.length&&d.every(x=>x&&x.id&&x.t)){DEPTS=d;try{localStorage.setItem("mirs-depts",JSON.stringify(d))}catch(e){}}}catch(e){}}
 refreshDepts().then(()=>{if(!powered)showCode()});
 // t = one-way fingerprint of the department code (the code itself is not stored here)
@@ -613,7 +613,7 @@ function updatePushUI(){const b=$("pushBtn");if(!OS){b.classList.remove("show");
   const g=OS.Notifications.permission;b.disabled=!!g;b.textContent=g?"✓ קריאות פעילות גם כשהאפליקציה סגורה":"🔔 קבלת קריאות כשהאפליקציה סגורה"}
 function ring(to,kind,extra){
   if(!pushTag)return false; const now=Date.now(),rk=kind==="line"?"line":to; if(now-(lastRing[rk]||0)<20000)return true; lastRing[rk]=now;
-  fetch("/.netlify/functions/ring",{method:"POST",headers:{"Content-Type":"application/json"},
+  fetch("/api/ring",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify(Object.assign({ch:pushTag,to,from:myId,name:myName,kind,online:roster.map(x=>x.id).slice(0,60),url:location.origin+"/"},extra||{}))}).catch(()=>{});
   return true;
 }
@@ -696,11 +696,21 @@ $("powerBtn").onclick=async()=>{
   render();
 };
 /* ---------- call line: any department can call a hub (e.g. the Moked) ---------- */
+// one-way proof that this phone knows the department code (the server never needs the code itself)
+const proofs={};
+async function proofOf(code){if(proofs[code])return proofs[code];
+  const base=await crypto.subtle.importKey("raw",TE.encode(code),"PBKDF2",false,["deriveBits"]);
+  const bits=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:TE.encode("mirs-channel-v3"),iterations:150000,hash:"SHA-256"},base,512));
+  const pre=TE.encode("mirs-proof-v1|"),buf=new Uint8Array(pre.length+32);buf.set(pre);buf.set(bits.slice(0,32),pre.length);
+  return proofs[code]={t:hex(bits.slice(56,64)),v:hex(new Uint8Array(await crypto.subtle.digest("SHA-256",buf)))}}
+let lineErr="";
 async function getLine(hub){
   if(hub==="testhub"){if(!isTest)return "";const h=new Uint8Array(await crypto.subtle.digest("SHA-256",TE.encode("mirs-test-line-v1")));return Array.from(h,x=>x.toString(16).padStart(2,"0")).join("")}
   try{const c=JSON.parse(localStorage.getItem("mirs-line-"+hub)||"null");if(c&&c.code===deptCode&&c.key)return c.key}catch(e){}
-  try{const r=await fetch("/.netlify/functions/depts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"line",code:deptCode,hub})});
-    const j=await r.json();if(!j.ok)return "";try{localStorage.setItem("mirs-line-"+hub,JSON.stringify({code:deptCode,key:j.key}))}catch(e){}return j.key}catch(e){return ""}}
+  lineErr="";
+  try{const pr=await proofOf(normCode(deptCode));
+    const r=await fetch("/api/depts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"line",t:pr.t,v:pr.v,hub})});
+    const j=await r.json();if(!j.ok){lineErr=j.error||"";return ""}try{localStorage.setItem("mirs-line-"+hub,JSON.stringify({code:deptCode,key:j.key}))}catch(e){}return j.key}catch(e){return ""}}
 function drawLineBtns(){const box=$("lineBtns");box.replaceChildren();if(!powered)return;
   const mk=(txt,cls,fn)=>{const b=document.createElement("button");b.className="install show"+(cls?" "+cls:"");b.textContent=txt;b.onclick=fn;box.appendChild(b)};
   if(onLine){mk("↩ חזרה לערוץ "+deptName(curDept),"back",leaveLine);return}
@@ -710,7 +720,7 @@ async function joinLine(hub,caller){
   if(!powered)return; ensureAC();
   showOver(caller?"מתחבר ל"+deptName(hub)+"…":"מתחבר לקו…","","",true,false);
   const key=await getLine(hub);
-  if(!key){showOver("אין חיבור לקו","","בדקו אינטרנט ונסו שוב",false,false);setTimeout(()=>{if(!rx.id&&!txId)hideOver()},3000);return}
+  if(!key){showOver("אין חיבור לקו","",lineErr==="noproof"?"המנהל צריך להקליד מחדש את קוד המחלקה בממשק הניהול ולשמור":lineErr==="auth"?"קוד המחלקה לא מאושר לקו הזה":lineErr==="locked"?"יותר מדי ניסיונות. נסו שוב בעוד 15 דקות":"בדקו אינטרנט ונסו שוב",false,false);setTimeout(()=>{if(!rx.id&&!txId)hideOver()},3000);return}
   resetNet();onLine={hub,caller};curCh="line-"+hub;loadKnown();await startNet(key);
   document.querySelector(".brand p").textContent="📞 קו "+deptName(hub);drawLineBtns();render();
   if(caller){chirp("alert");send({t:"ctl",type:"alert",to:"all",n:myName});

@@ -67,11 +67,11 @@ button:disabled{opacity:.5;cursor:default}
 </div>
 
 <script>
-const API="/.netlify/functions/depts", $=id=>document.getElementById(id);
+const API="/api/depts", $=id=>document.getElementById(id);
 let pw="", depts=[], dirty=false;
 try{pw=sessionStorage.getItem("mirs-admin")||""}catch(e){}
 
-const ERR={locked:"יותר מדי ניסיונות שגויים. נסו שוב בעוד 15 דקות.",auth:"סיסמה שגויה.","no-admin":"עוד לא הוגדרה סיסמת מנהל ב-Netlify (ADMIN_PASSWORD).",name:"לכל מחלקה צריך שם.",short:"קוד קצר מדי (לפחות 6 תווים)",dup:"אותו קוד מופיע פעמיים",nocode:"חסר קוד",bad:"שגיאה בבקשה."};
+const ERR={locked:"יותר מדי ניסיונות שגויים. נסו שוב בעוד 15 דקות.",auth:"סיסמה שגויה.","no-admin":"עוד לא הוגדרה סיסמת מנהל ב-Cloudflare (ADMIN_PASSWORD).","no-kv":"עוד לא חובר מאגר הנתונים MIRS ב-Cloudflare.",name:"לכל מחלקה צריך שם.",short:"קוד קצר מדי (לפחות 6 תווים)",dup:"אותו קוד מופיע פעמיים",nocode:"חסר קוד",bad:"שגיאה בבקשה."};
 async function call(body){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","x-admin":pw},body:JSON.stringify(body)});
   const j=await r.json().catch(()=>({ok:false,error:"bad"}));
@@ -93,7 +93,7 @@ function render(){
       <div style="margin-top:10px"><label>קוד</label><input class="code" inputmode="numeric" maxlength="30" placeholder="הקלידו קוד קיים או צרו חדש"></div>
       <div class="btns"><button type="button" class="copy">📋 העתקה</button><button type="button" class="g wa">וואטסאפ</button><button type="button" class="y nc">🔄 קוד חדש</button><button type="button" class="r del">מחיקה</button></div>`;
     const n=c.querySelector(".n"),code=c.querySelector(".code");
-    n.value=d.n;code.value=pretty(d.code);const hb=c.querySelector(".hub");hb.checked=!!d.hub;hb.onchange=()=>{d.hub=hb.checked;mark()};
+    n.value=d.n;code.value=pretty(d.code);if(!d.code)code.placeholder="הקלידו את הקוד הקיים של המחלקה ושמרו";const hb=c.querySelector(".hub");hb.checked=!!d.hub;hb.onchange=()=>{d.hub=hb.checked;mark()};
     n.oninput=()=>{d.n=n.value;mark()};
     code.oninput=()=>{d.code=code.value.replace(/[\s-]/g,"");mark()};
     c.querySelector(".copy").onclick=async()=>{if(!d.code)return setMsg("אין קוד להעתקה","err");try{await navigator.clipboard.writeText(shareText(d));setMsg("הועתק: "+d.n,"ok")}catch(e){prompt("העתיקו:",shareText(d))}};
@@ -110,8 +110,17 @@ async function enter(){
 }
 $("login").onsubmit=e=>{e.preventDefault();pw=$("pw").value;$("loginMsg").textContent="בודק…";$("loginMsg").className="hint";enter()};
 $("add").onclick=()=>{depts.push({id:"",n:"מחלקה חדשה",code:newCode()});render();mark();$("list").lastElementChild.querySelector(".n").select()};
+// fingerprint + one-way proof are computed here, so the server never runs the slow PBKDF2 (must match index.html)
+const TE=new TextEncoder(),hex=a=>Array.from(a,b=>b.toString(16).padStart(2,"0")).join("");
+const FINALS={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
+const normCode=v=>String(v||"").toLowerCase().replace(/[ךםןףץ]/g,c=>FINALS[c]).replace(/[^a-z0-9\u05d0-\u05ea]/g,"").slice(0,30);
+async function proofOf(code){const base=await crypto.subtle.importKey("raw",TE.encode(code),"PBKDF2",false,["deriveBits"]);
+  const bits=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:TE.encode("mirs-channel-v3"),iterations:150000,hash:"SHA-256"},base,512));
+  const pre=TE.encode("mirs-proof-v1|"),buf=new Uint8Array(pre.length+32);buf.set(pre);buf.set(bits.slice(0,32),pre.length);
+  return {t:hex(bits.slice(56,64)),v:hex(new Uint8Array(await crypto.subtle.digest("SHA-256",buf)))}}
 $("save").onclick=async()=>{$("save").disabled=true;setMsg("שומר…");
-  try{const j=await call({action:"save",depts});depts=j.depts;render();dirty=false;setMsg("נשמר ✓","ok")}catch(e){setMsg(e.message,"err")}
+  try{const send=[];for(const d of depts){const c=normCode(d.code),x={id:d.id,n:d.n,code:d.code,hub:!!d.hub};if(c.length>=6)Object.assign(x,await proofOf(c));send.push(x)}
+    const j=await call({action:"save",depts:send});depts=j.depts;render();dirty=false;setMsg("נשמר ✓","ok")}catch(e){setMsg(e.message,"err")}
   $("save").disabled=false};
 $("logout").onclick=()=>{try{sessionStorage.removeItem("mirs-admin")}catch(e){}location.reload()};
 window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
