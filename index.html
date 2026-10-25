@@ -182,12 +182,17 @@ body{background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 60%,var(--sky2
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hint,:root:not([data-theme="light"]) .copy{background:rgba(6,23,26,.82)}}
 :root[data-theme="dark"] .hint,:root[data-theme="dark"] .copy{background:rgba(6,23,26,.82)}
 @media (prefers-reduced-motion:reduce){.wv,.ptt::after{animation:none}}
+.city-logo{display:inline-block;background:#fff;border-radius:18px;padding:8px 14px;margin:0 0 10px;box-shadow:0 8px 22px -10px rgba(0,60,60,.45);line-height:0}
+.city-logo img{height:64px;width:auto;display:block}
+.city-logo::after{content:"";display:block;height:4px;margin:8px -14px -8px;border-radius:0 0 18px 18px;background:linear-gradient(90deg,#FDCB0B,#F15A2B,#B0282F,#29A9E1,#0F75BC,#058496)}
+.city-logo:focus-visible{outline:3px solid var(--safety);outline-offset:3px}
+.brand h1{background-image:linear-gradient(120deg,#2E3192,#2479BD 55%,var(--teal))}
 </style>
 </head>
 <body>
 <div class="scene" aria-hidden="true"><div class="sun"></div>
 <svg viewBox="0 0 1200 400" preserveAspectRatio="none"><path fill="var(--mtn1)" d="M0 230 L120 150 L210 200 L330 95 L450 190 L560 120 L700 210 L820 130 L950 205 L1060 140 L1200 200 L1200 400 L0 400Z"/><path fill="var(--mtn2)" d="M0 270 L160 200 L300 255 L430 185 L600 260 L760 195 L900 255 L1050 210 L1200 250 L1200 400 L0 400Z"/><g class="wv"><path fill="var(--sea1)" d="M-60 300 Q 40 285 140 300 T 340 300 T 540 300 T 740 300 T 940 300 T 1140 300 T 1340 300 V400 H-60Z"/></g><g class="wv wv2"><path fill="var(--sea2)" d="M-60 335 Q 50 318 160 335 T 380 335 T 600 335 T 820 335 T 1040 335 T 1260 335 V400 H-60Z"/></g></svg></div>
-<header class="brand"><div class="city">🌴 עיריית אילת</div><h1>מירס<em>.</em></h1><p>לחץ ודבר מכל טלפון, עם הקלטות ומיקום</p></header>
+<header class="brand"><a class="city-logo" href="https://www.eilat.muni.il" target="_blank" rel="noopener" aria-label="עיריית אילת"><img src="eilat-logo.png" alt="עיריית אילת" width="180" height="88"></a><h1>מירס<em>.</em></h1><p>לחץ ודבר מכל טלפון, עם הקלטות ומיקום</p></header>
 <div class="device" role="application" aria-label="מכשיר מירס">
   <div class="antenna" aria-hidden="true"></div>
   <button class="ptt-side" id="pttSide" aria-label="כפתור דיבור צדדי"></button>
