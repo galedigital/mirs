@@ -182,10 +182,11 @@ body{background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 60%,var(--sky2
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hint,:root:not([data-theme="light"]) .copy{background:rgba(6,23,26,.82)}}
 :root[data-theme="dark"] .hint,:root[data-theme="dark"] .copy{background:rgba(6,23,26,.82)}
 @media (prefers-reduced-motion:reduce){.wv,.ptt::after{animation:none}}
-.city-logo{display:inline-block;background:#fff;border-radius:18px;padding:8px 14px;margin:0 0 10px;box-shadow:0 8px 22px -10px rgba(0,60,60,.45);line-height:0}
-.city-logo img{height:64px;width:auto;display:block}
-.city-logo::after{content:"";display:block;height:4px;margin:8px -14px -8px;border-radius:0 0 18px 18px;background:linear-gradient(90deg,#FDCB0B,#F15A2B,#B0282F,#29A9E1,#0F75BC,#058496)}
+.city-logo{display:inline-block;margin:0 0 10px;line-height:0;border-radius:8px}
+.city-logo img{height:72px;width:auto;display:block}
 .city-logo:focus-visible{outline:3px solid var(--safety);outline-offset:3px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .city-logo img{filter:drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 8px rgba(255,255,255,.25))}}
+:root[data-theme="dark"] .city-logo img{filter:drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 8px rgba(255,255,255,.25))}
 .brand h1{background-image:linear-gradient(120deg,#2E3192,#2479BD 55%,var(--teal))}
 </style>
 </head>
