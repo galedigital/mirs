@@ -74,7 +74,12 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
 .live .wave i{animation:w .5s ease-in-out infinite alternate}
 .wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.2s}.wave i:nth-child(4){animation-delay:.3s}.wave i:nth-child(5){animation-delay:.15s}
 @keyframes w{to{height:20px}}
+#power{justify-content:safe center;overflow-y:auto;gap:4px;padding:8px 10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#power input,#power select{padding-top:5px!important;padding-bottom:5px!important}
 #power label{font-size:.85rem;font-weight:500}
+#power select{font:inherit;font-size:1rem;width:85%;padding:6px 8px;border:1px solid #3A4148;border-radius:10px;background:var(--lcd-hi);color:var(--lcd-ink);text-align:center}
+#power input::placeholder{color:var(--lcd-dim);font-size:.85rem}
 #power input{font:inherit;font-size:1rem;width:85%;padding:7px 8px;border:1px solid #3A4148;border-radius:10px;background:var(--lcd-hi);color:var(--lcd-ink);text-align:center}
 #power button{font:inherit;font-weight:900;font-size:1rem;padding:8px 26px;border:0;border-radius:99px;background:var(--safety);color:#1A1400;cursor:pointer;margin-top:4px}
 #power #newCode{background:none;color:var(--lcd-dim);font-weight:500;font-size:.75rem;padding:2px 8px;margin:-4px 0 0;text-decoration:underline}
@@ -122,6 +127,14 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
 .guide li{margin:3px 0}
 .guide .tag{display:inline-block;padding:0 8px;border-radius:6px;font-weight:700;font-size:.85rem;color:#fff}
 .guide .t-y{background:var(--safety);color:#1A1400}.guide .t-g{background:var(--green)}.guide .t-b{background:#3B7DD8}.guide .t-r{background:var(--red)}.guide .t-k{background:var(--key)}
+.inv{text-align:center}
+.inv .inv-step{margin:14px 0 8px;font-weight:700;font-size:.9rem}
+.inv .qr{background:#fff;border-radius:12px;padding:10px;width:min(240px,70vw);margin:0 auto;aspect-ratio:1}
+.inv .qr svg{width:100%;height:100%;display:block}
+.inv .code{font-size:1.35rem;font-weight:900;letter-spacing:.01em;padding:10px;border-radius:10px;background:var(--body);color:var(--safety)}
+.inv-btns{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.inv-btns button{border:0;font:inherit;font-weight:700;font-size:.9rem;padding:9px 16px;border-radius:99px;background:var(--safety);color:#1A1400;cursor:pointer}
+.inv-msg{min-height:1.4em;margin:8px 0 0;font-size:.85rem}
 .guide .note{margin-top:16px;padding:10px 12px;border-radius:10px;background:rgba(242,183,5,.16);font-size:.87rem}
 </style>
 </head>
@@ -154,8 +167,10 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
         <div class="over show" id="power">
           <label for="nameIn">שם המכשיר</label>
           <input id="nameIn" maxlength="18" placeholder="למשל: דנה" autocomplete="off">
-          <label for="chIn">קוד ערוץ (זהה בכל המכשירים)</label>
-          <input id="chIn" maxlength="24" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" aria-describedby="powerMsg">
+          <label for="deptIn" class="sr">ערוץ</label>
+          <select id="deptIn"></select>
+          <label for="chIn" id="chLbl">קוד המחלקה</label>
+          <input id="chIn" maxlength="60" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" aria-describedby="powerMsg">
           <button type="button" id="newCode">יצירת קוד חדש</button>
           <button id="powerBtn">הפעלה</button>
           <p id="powerMsg">הדפדפן יבקש גישה למיקרופון.</p>
@@ -182,11 +197,10 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
   </div>
   <button class="ptt" id="ptt">לחץ ודבר<span>החזיקו לשידור, שחררו להאזנה</span></button>
 </div>
-<p class="hint">פותחים את הקישור בשני טלפונים או יותר, מקלידים שם ואותו קוד ערוץ, בוחרים למי לדבר ומחזיקים את הכפתור הצהוב. הקול עובר בזמן אמת ומוצפן, ורק מי שיש לו את קוד הערוץ שומע.</p>
+<p class="hint">פותחים את הקישור בשני טלפונים או יותר, מקלידים שם ובוחרים את ערוץ המחלקה, בוחרים למי לדבר ומחזיקים את הכפתור הצהוב. הקול עובר בזמן אמת ומוצפן, ורק מי שיש לו את קוד הערוץ שומע.</p>
 <button class="install" id="install">התקנה כאפליקציה</button>
 <button class="install" id="pushBtn"></button>
-<button class="install" id="shareBtn">🔗 שיתוף הערוץ</button>
-<p class="hint" id="shareMsg" role="status" hidden></p>
+<button class="install" id="shareBtn">➕ צירוף אנשים לערוץ</button>
 <p class="hint" id="iosHint" hidden>להתקנה באייפון: כפתור השיתוף בספארי ואז ״הוספה למסך הבית״.</p>
 <button class="guide-btn" id="guideBtn" aria-haspopup="dialog">מדריך שימוש</button>
 <dialog class="guide" id="guide" aria-labelledby="guideTitle">
@@ -195,7 +209,9 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
     <h3>1. הפעלה</h3>
     <ol>
       <li>מקלידים שם, כדי שהצד השני ידע מי מדבר.</li>
-      <li>קוד ערוץ: הראשון יוצר קוד (נוצר אוטומטית) ולוחץ <b>🔗 שיתוף הערוץ</b> כדי לשלוח קישור לשאר. מי שפותח את הקישור נכנס ישר לאותו ערוץ.</li>
+      <li>בוחרים ערוץ: המחלקה שלכם, או <b>ערוץ פרטי</b>.</li>
+      <li>בפעם הראשונה צריך את קוד המחלקה. מקבלים אותו ממנהל המחלקה: סורקים את הברקוד שלו, פותחים קישור שהוא שלח, או מקלידים את המילים שהוא מקריא. מהפעם השנייה הקוד נשמר.</li>
+      <li><b>מנהל מחלקה</b> בפעם הראשונה: לוחץ ״יצירת קוד חדש״, מפעיל, ואז <b>➕ צירוף אנשים לערוץ</b> ומציג לעובדים את הברקוד.</li>
       <li>לוחצים <b>הפעלה</b> ומאשרים גישה למיקרופון.</li>
     </ol>
     <h3>2. בוחרים למי לדבר</h3>
@@ -227,6 +243,18 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
     <div class="note">🔒 השיחות, השמות והמיקומים מוצפנים. רק מי שיש לו את קוד הערוץ יכול לשמוע, אז שתפו אותו רק עם מי שצריך.<br>שימו לב: ההיסטוריה נשמרת רק עד שסוגרים או מרעננים את האפליקציה (עד 40 פריטים). מיקום מגיע רק למי שהאפליקציה פתוחה אצלו.</div>
   </div>
 </dialog>
+<dialog class="guide" id="invite" aria-labelledby="invTitle">
+  <div class="gh"><h2 id="invTitle">צירוף לערוץ</h2><button class="gx" id="invX" aria-label="סגירה">✕</button></div>
+  <div class="gb inv">
+    <p class="inv-step">1. מי שלידכם: סורק את הברקוד עם מצלמת הטלפון</p>
+    <div class="qr" id="invQr" role="img" aria-label="ברקוד להצטרפות לערוץ"></div>
+    <p class="inv-step">2. מי שרחוק: מקריאים לו את הקוד, והוא בוחר את הערוץ ומקליד</p>
+    <div class="code" id="invCode"></div>
+    <div class="inv-btns"><button type="button" id="invShare">📤 שליחת קישור</button><button type="button" id="invCopy">📋 העתקת הקוד</button></div>
+    <p class="inv-msg" id="invMsg" role="status"></p>
+    <div class="note">🔒 שתפו רק עם אנשי הערוץ. מי שיש לו את הקוד יכול להאזין.</div>
+  </div>
+</dialog>
 <footer class="copy">© 2026 גל מהדיגיטל. כל הזכויות שמורות.</footer>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.14.1/dist/mqtt.min.js"></script>
 
@@ -247,10 +275,17 @@ let clis=[],seen=new Map(),beat=null,aesKey=null,topic="",pushTag="",willPayload
 const dedup=new Map();
 const TE=new TextEncoder(),TD=new TextDecoder();
 const hex=a=>Array.from(a,b=>b.toString(16).padStart(2,"0")).join("");
-const CODE_ABC="abcdefghjkmnpqrstuvwxyz23456789";
-function normCode(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,24)}
-function fmtCode(n){return (n.match(/.{1,3}/g)||[]).join("-")}
-function newCode(){const r=crypto.getRandomValues(new Uint8Array(9));let s="";for(const x of r)s+=CODE_ABC[x%CODE_ABC.length];return fmtCode(s)}
+const WORDS="אבטיח אגוז אגם אוהל אוזן אורן אוצר אופניים אייל אילן אריה ארנב אש אתרוג בובה בוסתן בית בלון בננה ברבור ברווז ברק גבינה גבעה גדי גזר גינה גיטרה גל גמל גן גפן גשם גשר דבורה דבש דג דגל דוב דולפין דלי דלת דקל דשא הר הדס היכל ורד זאב זברה זהב זית זמר זנב חבל חוף חול חולצה חומה חמור חסה חלון חלב חלום חמנייה חציל חצב חרוב חשמל טבעת טווס טוסט טל טלה טרקטור ינשוף יען יער ים ירח ירוק ירקון יהלום כדור כובע כוכב כוס כינור כיסא כלב כנרת כפית כרוב כרם כתום לביא לוויתן לחם לטאה לימון לפיד מגדל מדבר מזלג מטוס מים מלון מלח מנגו מנורה מספריים מעיין מפל מפתח מצלמה מרק משקפיים מתנה נהר נוצה נחל נמל נמר נסיך נעל נר נשר סוס סוכר סולם סל סלע סנאי ספר ספינה סירה סלמון סביון עגבנייה עגור עוגה עוף עז עט עיפרון עכבר ענן עפיפון עץ ערבה עשב פופקורן פיל פינגווין פנס פסנתר פעמון פרה פרח פרפר פרי צב צבי צדף צוק צלחת צנון צפרדע צפצפה קוף קיווי קטר קשת קרש קן קקטוס קערה קרח קרנף קשתית ראש רימון רכבת רקפת רוח רחוב שבלול שועל שולחן שום שושן שזיף שחף שמיים שמש שן שעון שפן שקד שקמה שרך שוקו תאנה תבלין תוף תות תמר תנור תפוז תפוח תרנגול תוכי תיק תכלת תמנון אלון אקליפטוס בריכה גלגל דייג הגה חסידה טבע יונה כנף לגונה מגן נבל סערה עדן פסגה צמר קורל רעם שלג תהילה אלמוג בזלת גומי דקר ורוד חגב טחנה יוגורט כרמל לוטוס מסלול נווה סהר עמק פטל צימר קינמון רפסודה שיזף תלתן".split(" ");
+const FINALS={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
+// key form: lower case, final letters unified, only letters/digits (spaces and dashes ignored)
+function normCode(v){return String(v||"").toLowerCase().replace(/[ךםןףץ]/g,c=>FINALS[c]).replace(/[^a-z0-9\u05d0-\u05ea]/g,"").slice(0,60)}
+function prettyCode(v){return String(v||"").trim().replace(/[\s\-_]+/g," ").slice(0,60)}
+// 4 words of 256 + a number: about 38 bits, easy to read out loud
+function newCode(){const r=crypto.getRandomValues(new Uint8Array(5));return [WORDS[r[0]],WORDS[r[1]],WORDS[r[2]],WORDS[r[3]],10+r[4]%90].join(" ")}
+const DEPTS=[{id:"shefa",n:"שפ״ע / תברואה"},{id:"pikuach",n:"פיקוח ואכיפה"},{id:"bitachon",n:"ביטחון וחירום"},{id:"events",n:"אירועים וחופים"},{id:"private",n:"ערוץ פרטי"}];
+const deptName=id=>(DEPTS.find(d=>d.id===id)||DEPTS[4]).n;
+// same words in two departments still give two separate channels
+const keyFor=(dept,code)=>dept==="private"?normCode(code):"dept:"+dept+":"+normCode(code);
 async function deriveChannel(code){
   const base=await crypto.subtle.importKey("raw",TE.encode(code),"PBKDF2",false,["deriveBits"]);
   const bits=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:TE.encode("mirs-channel-v3"),iterations:150000,hash:"SHA-256"},base,512));
@@ -511,32 +546,64 @@ $("pushBtn").onclick=async()=>{if(!OS)return;try{await OS.Notifications.requestP
 initPush();
 
 /* ---------- power on ---------- */
-{let saved="",fromLink=normCode(decodeURIComponent(location.hash.slice(1)));
-  try{$("nameIn").value=localStorage.getItem("mirs-name")||"";saved=normCode(localStorage.getItem("mirs-ch"))}catch(e){}
-  const pick=fromLink.length>=6?fromLink:saved.length>=6?saved:"";
-  $("chIn").value=pick?fmtCode(pick):newCode();
-  if(fromLink.length>=6)$("powerMsg").textContent="הוזמנתם לערוץ. מקלידים שם ולוחצים הפעלה.";
+let codes={},curDept="private",curPretty="";
+try{codes=JSON.parse(localStorage.getItem("mirs-codes")||"{}")||{}}catch(e){codes={}}
+$("deptIn").innerHTML=DEPTS.map(d=>`<option value="${d.id}">${d.n}</option>`).join("");
+function showDept(id,keepMsg){$("deptIn").value=id;const priv=id==="private";
+  $("chLbl").textContent=priv?"קוד הערוץ הפרטי":"קוד המחלקה";
+  $("chIn").placeholder=priv?"":"מקבלים ממנהל המחלקה";
+  $("newCode").textContent=priv?"יצירת קוד חדש":"מנהל/ת? יצירת קוד חדש למחלקה";
+  $("chIn").value=codes[id]||(priv?newCode():"");
+  if(!keepMsg)$("powerMsg").textContent=codes[id]?"הקוד שמור. מקלידים שם ולוחצים הפעלה.":priv?"שתפו את הקוד עם מי שצריך אחרי ההפעלה.":"בפעם הראשונה צריך את קוד המחלקה מהמנהל."}
+{let dept="private",code="",invited=false;
+  try{$("nameIn").value=localStorage.getItem("mirs-name")||"";dept=localStorage.getItem("mirs-dept")||"private";
+    const old=localStorage.getItem("mirs-ch");if(old&&!codes.private&&normCode(old).length>=6&&!/^\d+$/.test(old))codes.private=old}catch(e){}
+  const h=decodeURIComponent(location.hash.slice(1));
+  if(h){const q=new URLSearchParams(h.includes("k=")?h:"");
+    const d=q.get("d"),k=q.get("k")||(h.includes("=")?"":h);
+    if(k&&normCode(k).length>=6){dept=DEPTS.some(x=>x.id===d)?d:"private";code=prettyCode(k);invited=true}}
+  if(!DEPTS.some(x=>x.id===dept))dept="private";
+  showDept(dept);
+  if(invited){$("chIn").value=code;$("powerMsg").textContent="הוזמנתם לערוץ "+deptName(dept)+". מקלידים שם ולוחצים הפעלה."}
   if(location.hash)try{window.history.replaceState(null,"",location.pathname)}catch(e){}}
-$("newCode").onclick=()=>{$("chIn").value=newCode();$("powerMsg").textContent="נוצר קוד חדש. אחרי ההפעלה שתפו אותו עם מי שצריך."};
+$("deptIn").onchange=()=>showDept($("deptIn").value);
+$("newCode").onclick=()=>{const priv=$("deptIn").value==="private";
+  if(!priv&&!confirm("ליצור קוד חדש למחלקה?\nרק מנהל המחלקה עושה את זה, ופעם אחת. מי שיש לו קוד ישן לא ישמע את מי שבקוד החדש."))return;
+  $("chIn").value=newCode();$("powerMsg").textContent="נוצר קוד חדש. אחרי ההפעלה לוחצים ״צירוף אנשים לערוץ״."};
 $("nameIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("chIn").focus()});
 $("chIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("powerBtn").click()});
 $("powerBtn").onclick=async()=>{
   const n=$("nameIn").value.trim().slice(0,18); if(!n){$("powerMsg").textContent="צריך שם כדי שהצד השני ידע מי מדבר.";$("nameIn").focus();return}
-  const ch=normCode($("chIn").value); if(ch.length<6){$("powerMsg").textContent="קוד הערוץ קצר מדי. צריך לפחות 6 אותיות או ספרות, או ללחוץ ״יצירת קוד חדש״.";$("chIn").focus();return}
+  const dept=$("deptIn").value,pretty=prettyCode($("chIn").value);
+  if(normCode(pretty).length<6){$("powerMsg").textContent=dept==="private"?"הקוד קצר מדי. לוחצים ״יצירת קוד חדש״.":"צריך את קוד המחלקה. מקבלים אותו ממנהל המחלקה.";$("chIn").focus();return}
   if(!window.crypto||!crypto.subtle){$("powerMsg").textContent="הדפדפן לא תומך בהצפנה. פתחו את האתר בכתובת https.";return}
   if(typeof mqtt==="undefined"){$("powerMsg").textContent="רכיב החיבור לא נטען. בדקו אינטרנט ורעננו.";return}
-  myName=n; try{localStorage.setItem("mirs-name",n);localStorage.setItem("mirs-ch",ch)}catch(e){}
+  myName=n; codes[dept]=pretty; curDept=dept; curPretty=pretty;
+  try{localStorage.setItem("mirs-name",n);localStorage.setItem("mirs-dept",dept);localStorage.setItem("mirs-codes",JSON.stringify(codes))}catch(e){}
   ensureAC(); chirp("in"); $("powerBtn").disabled=true; $("powerMsg").textContent="מבקש גישה למיקרופון…";
-  await setupMic(); powered=true; $("power").classList.remove("show"); $("title").textContent="ערוץ "+fmtCode(ch);
-  curCh=ch;loadKnown();await startNet(ch);tagPush();$("shareBtn").classList.add("show");
+  await setupMic(); powered=true; $("power").classList.remove("show");
+  const ch=keyFor(dept,pretty); curCh=normCode(dept)+"-"+normCode(pretty);
+  document.querySelector(".brand p").textContent="🔒 "+deptName(dept);
+  loadKnown();await startNet(ch);tagPush();$("shareBtn").classList.add("show");
   if(!micOk)showOver("אין מיקרופון","מצב האזנה בלבד","הדפדפן לא אישר גישה למיקרופון. אפשר עדיין לשמוע אחרים.",false,false);
   render();
 };
-$("shareBtn").onclick=async()=>{if(!curCh)return;const url=location.origin+"/#"+fmtCode(curCh),m=$("shareMsg");
-  try{if(navigator.share){await navigator.share({title:"מירס",text:"הצטרפו לערוץ שלי במירס",url});return}
-    await navigator.clipboard.writeText(url);m.textContent="הקישור לערוץ הועתק. שלחו אותו רק למי שצריך.";}
-  catch(e){if(e&&e.name==="AbortError")return;m.textContent="קוד הערוץ: "+fmtCode(curCh)}
-  m.hidden=false;setTimeout(()=>{m.hidden=true},5000)};
+/* ---------- invite: QR + words + link ---------- */
+let qrLib=null;
+function loadQr(){if(window.qrcode)return Promise.resolve();if(qrLib)return qrLib;
+  qrLib=new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js";sc.onload=res;sc.onerror=()=>{qrLib=null;rej()};document.head.appendChild(sc)});return qrLib}
+const inviteUrl=()=>location.origin+"/#d="+curDept+"&k="+encodeURIComponent(curPretty);
+$("shareBtn").onclick=async()=>{if(!curPretty)return;const dlg=$("invite");
+  $("invTitle").textContent="צירוף ל"+deptName(curDept);$("invCode").textContent=curPretty;$("invMsg").textContent="";
+  $("invQr").textContent="טוען ברקוד…";dlg.showModal?dlg.showModal():dlg.setAttribute("open","");
+  try{await loadQr();const q=qrcode(0,"M");q.addData(inviteUrl());q.make();$("invQr").innerHTML=q.createSvgTag({cellSize:6,margin:2,scalable:true})}
+  catch(e){$("invQr").textContent="הברקוד לא נטען. אפשר לשלוח קישור או להקריא את הקוד."}};
+$("invX").onclick=()=>$("invite").close?$("invite").close():$("invite").removeAttribute("open");
+$("invite").addEventListener("click",e=>{if(e.target===$("invite"))$("invite").close()});
+$("invShare").onclick=async()=>{const url=inviteUrl();
+  try{if(navigator.share){await navigator.share({title:"מירס",text:"הצטרפות לערוץ "+deptName(curDept)+" במירס",url});return}
+    await navigator.clipboard.writeText(url);$("invMsg").textContent="הקישור הועתק."}catch(e){if(!e||e.name!=="AbortError")$("invMsg").textContent="לא הצלחתי לשתף. העתיקו את הקוד במקום."}};
+$("invCopy").onclick=async()=>{try{await navigator.clipboard.writeText(curPretty);$("invMsg").textContent="הקוד הועתק."}catch(e){$("invMsg").textContent="הקוד: "+curPretty}};
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&ac)ac.resume()});
 render();
 </script>
