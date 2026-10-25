@@ -28,6 +28,8 @@ button:disabled{opacity:.5;cursor:default}
 .row{display:flex;gap:8px;align-items:end}
 .row>div{flex:1}
 .btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.hubl{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.9rem;color:var(--ink);cursor:pointer}
+.hubl input{width:20px;height:20px;accent-color:#3B7DD8}
 .hint{font-size:.8rem;color:var(--soft);margin:6px 0 0}
 .warn{color:var(--red)}
 .bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:10px;justify-content:center;align-items:center}
@@ -82,10 +84,11 @@ function render(){
   depts.forEach((d,i)=>{
     const c=document.createElement("div");c.className="card";
     c.innerHTML=`<div class="row"><div><label>שם המחלקה</label><input class="n" maxlength="30"></div></div>
+      <label class="hubl"><input type="checkbox" class="hub"> 📞 מקבל קריאות ממחלקות אחרות (מוקד)</label>
       <div style="margin-top:10px"><label>קוד</label><input class="code" inputmode="numeric" maxlength="30" placeholder="הקלידו קוד קיים או צרו חדש"></div>
       <div class="btns"><button type="button" class="copy">📋 העתקה</button><button type="button" class="g wa">וואטסאפ</button><button type="button" class="y nc">🔄 קוד חדש</button><button type="button" class="r del">מחיקה</button></div>`;
     const n=c.querySelector(".n"),code=c.querySelector(".code");
-    n.value=d.n;code.value=pretty(d.code);
+    n.value=d.n;code.value=pretty(d.code);const hb=c.querySelector(".hub");hb.checked=!!d.hub;hb.onchange=()=>{d.hub=hb.checked;mark()};
     n.oninput=()=>{d.n=n.value;mark()};
     code.oninput=()=>{d.code=code.value.replace(/[\s-]/g,"");mark()};
     c.querySelector(".copy").onclick=async()=>{if(!d.code)return setMsg("אין קוד להעתקה","err");try{await navigator.clipboard.writeText(shareText(d));setMsg("הועתק: "+d.n,"ok")}catch(e){prompt("העתיקו:",shareText(d))}};

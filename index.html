@@ -101,6 +101,9 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
 .k.blue{background:linear-gradient(#4d8fe0,#2F6FC0)}
 .links{display:none;gap:8px;margin-top:4px}.links.show{display:flex}
 .links a{font-size:.8rem;font-weight:700;color:#1A1400;background:var(--safety);border-radius:99px;padding:5px 12px;text-decoration:none}
+.line-btns{display:flex;flex-direction:column;align-items:center}
+.line-btns .install{background:#3B7DD8;color:#fff;font-size:1rem;padding:12px 24px}
+.line-btns .install.back{background:var(--page-ink);color:var(--page)}
 .install{display:none;margin-top:18px;border:0;font:inherit;font-weight:700;font-size:.9rem;padding:10px 20px;border-radius:99px;background:var(--safety);color:#1A1400;cursor:pointer}
 .install.show{display:inline-block}
 .k.red{background:linear-gradient(#e2594a,var(--red))}
@@ -198,6 +201,7 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
 <p class="hint">פותחים את הקישור בשני טלפונים או יותר, מקלידים שם וקוד מחלקה, בוחרים למי לדבר ומחזיקים את הכפתור הצהוב. הקול עובר בזמן אמת ומוצפן, ורק מי שיש לו את קוד המחלקה שומע.</p>
 <button class="install" id="install">התקנה כאפליקציה</button>
 <button class="install" id="pushBtn"></button>
+<div id="lineBtns" class="line-btns"></div>
 <button class="install" id="shareBtn">📤 שליחת הקוד לעובד</button>
 <p class="hint" id="iosHint" hidden>להתקנה באייפון: כפתור השיתוף בספארי ואז ״הוספה למסך הבית״.</p>
 <button class="guide-btn" id="guideBtn" aria-haspopup="dialog">מדריך שימוש</button>
@@ -226,6 +230,13 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","
       <li><span class="tag t-g">התראה</span> מצלצל לצד השני ומבקש שיחזור אליכם. מגיע גם כהתראה בטלפון כשהאפליקציה סגורה.</li>
       <li><span class="tag t-b">מיקום</span> שולח את המיקום שלכם. מי שמקבל רואה כפתורי Waze ו-Google Maps לניווט אליכם.</li>
       <li><span class="tag t-r">ניתוק</span> עוצר שידור, האזנה או השמעה.</li>
+    </ul>
+    <h3>קריאה למוקד</h3>
+    <ul>
+      <li>לוחצים <b>📞 קריאה למוקד</b>. הטלפונים במוקד מצלצלים, גם כשהאפליקציה סגורה אצלם.</li>
+      <li>כשהמוקד עונה שומעים צפצוף, ומדברים כרגיל עם הכפתור הצהוב.</li>
+      <li>בסיום לוחצים <b>↩ חזרה לערוץ</b> של המחלקה.</li>
+      <li>במוקד: לוחצים על ההתראה ואז "ענה", ונכנסים ישר לשיחה.</li>
     </ul>
     <h3>5. הקלטות והיסטוריה</h3>
     <ul>
@@ -262,7 +273,7 @@ const TE=new TextEncoder(),TD=new TextDecoder();
 const hex=a=>Array.from(a,b=>b.toString(16).padStart(2,"0")).join("");
 const FINALS={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
 function normCode(v){return String(v||"").toLowerCase().replace(/[ךםןףץ]/g,c=>FINALS[c]).replace(/[^a-z0-9\u05d0-\u05ea]/g,"").slice(0,30)}
-let DEPTS=[{id:"moked",n:"מוקד",t:"a156735a33712b71"},{id:"env",n:"איכות הסביבה",t:"693fb8f346b07c67"},{id:"dover",n:"דוברות",t:"4f0fac11d079bcd0"},{id:"beaches",n:"חופים",t:"cbd81a76647baf7f"},{id:"tikshuv",n:"תקשוב",t:"4d3f39f77fd5d515"},{id:"shefa",n:"שפ״ע / תברואה",t:"333c61c16907ebcf"},{id:"pikuach",n:"פיקוח ואכיפה",t:"7c5c2d3d17c2b8cb"},{id:"bitachon",n:"ביטחון וחירום",t:"9cc7287503a484cc"}];
+let DEPTS=[{id:"moked",n:"מוקד",t:"a156735a33712b71",hub:true},{id:"env",n:"איכות הסביבה",t:"693fb8f346b07c67"},{id:"dover",n:"דוברות",t:"4f0fac11d079bcd0"},{id:"beaches",n:"חופים",t:"cbd81a76647baf7f"},{id:"tikshuv",n:"תקשוב",t:"4d3f39f77fd5d515"},{id:"shefa",n:"שפ״ע / תברואה",t:"333c61c16907ebcf"},{id:"pikuach",n:"פיקוח ואכיפה",t:"7c5c2d3d17c2b8cb"},{id:"bitachon",n:"ביטחון וחירום",t:"9cc7287503a484cc"}];
 // the list is managed from /admin; the built-in copy is only a fallback when offline
 try{const c=JSON.parse(localStorage.getItem("mirs-depts")||"null");if(Array.isArray(c)&&c.length)DEPTS=c}catch(e){}
 async function refreshDepts(){try{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),5000);
@@ -278,6 +289,8 @@ async function deriveChannel(code){
   aesKey=await crypto.subtle.importKey("raw",bits.slice(0,32),"AES-GCM",false,["encrypt","decrypt"]);
   topic="mirs3/"+hex(bits.slice(32,48)); pushTag=hex(bits.slice(48,56)); codeTag=hex(bits.slice(56,64));
 }
+async function pushTagOf(code){const base=await crypto.subtle.importKey("raw",TE.encode(code),"PBKDF2",false,["deriveBits"]);
+  const bits=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:TE.encode("mirs-channel-v3"),iterations:150000,hash:"SHA-256"},base,512));return hex(bits.slice(48,56))}
 async function seal(obj){const iv=crypto.getRandomValues(new Uint8Array(12));
   const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},aesKey,TE.encode(JSON.stringify(obj))));
   const out=new Uint8Array(13+ct.length);out[0]=3;out.set(iv,1);out.set(ct,13);return out}
@@ -310,7 +323,8 @@ async function startNet(code){
 }
 let asked=false;
 function hello(force){const m={t:"hi",from:myId,name:myName,tx:myTx};if(force||!asked){m.ask=1;asked=true}pub("p",m)}
-function rebuild(){roster=[{id:myId,name:myName,tx:myTx}].concat([...seen.values()]);let ch=false;for(const s of seen.values())if(s.name&&(!known[s.id]||known[s.id].name!==s.name)){known[s.id]={name:s.name};ch=true}if(ch)saveKnown();onRoster()}
+function rebuild(){const before=new Set(roster.map(x=>x.id));roster=[{id:myId,name:myName,tx:myTx}].concat([...seen.values()]);
+  if(onLine&&onLine.caller&&powered){const nw=roster.find(x=>x.id!==myId&&!before.has(x.id)&&x.name);if(nw&&!rx.id&&!txId){chirp("in");if(navigator.vibrate)navigator.vibrate([80,60,80]);showOver(deptName(onLine.hub)+" ענה",nw.name,"מחזיקים את הכפתור הצהוב ומדברים",false,false);setTimeout(()=>{if(!rx.id&&!txId)hideOver()},4000)}}let ch=false;for(const s of seen.values())if(s.name&&(!known[s.id]||known[s.id].name!==s.name)){known[s.id]={name:s.name};ch=true}if(ch)saveKnown();onRoster()}
 function send(msg){msg.from=myId;pub("m",msg)}
 function setTx(v){myTx=v;hello();rebuild()}
 function onRoster(){if(rx.id&&!roster.some(x=>x.id===rx.peer))endRx();render()}
@@ -513,16 +527,16 @@ async function initPush(){
     try{O.Notifications.addEventListener("permissionChange",updatePushUI)}catch(e){}
   });
 }
-function tagPush(){if(!OS||!pushTag)return;try{OS.login(myId);OS.User.addTags({ch:pushTag,uid:myId,name:myName})}catch(e){}}
+function tagPush(){if(!OS||!ownPush)return;try{OS.login(myId);OS.User.addTags({ch:ownPush,uid:myId,name:myName,hub:hubPush||""});if(!hubPush)OS.User.removeTag("hub")}catch(e){}}
 function updatePushUI(){const b=$("pushBtn");if(!OS){b.classList.remove("show");return}
   const iosNotInstalled=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!standalone;
   b.classList.add("show");
   if(iosNotInstalled){b.textContent="לקבלת קריאות באייפון: התקינו קודם למסך הבית";b.disabled=true;return}
   const g=OS.Notifications.permission;b.disabled=!!g;b.textContent=g?"✓ קריאות פעילות גם כשהאפליקציה סגורה":"🔔 קבלת קריאות כשהאפליקציה סגורה"}
-function ring(to,kind){
-  if(!pushTag)return false; const now=Date.now(); if(now-(lastRing[to]||0)<20000)return true; lastRing[to]=now;
+function ring(to,kind,extra){
+  if(!pushTag)return false; const now=Date.now(),rk=kind==="line"?"line":to; if(now-(lastRing[rk]||0)<20000)return true; lastRing[rk]=now;
   fetch("/.netlify/functions/ring",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ch:pushTag,to,from:myId,name:myName,kind,online:roster.map(x=>x.id).slice(0,60),url:location.origin+"/"})}).catch(()=>{});
+    body:JSON.stringify(Object.assign({ch:pushTag,to,from:myId,name:myName,kind,online:roster.map(x=>x.id).slice(0,60),url:location.origin+"/"},extra||{}))}).catch(()=>{});
   return true;
 }
 
@@ -537,10 +551,12 @@ $("pushBtn").onclick=async()=>{if(!OS)return;try{await OS.Notifications.requestP
 initPush();
 
 /* ---------- power on ---------- */
-let deptCode="",curDept="";
+let deptCode="",curDept="",onLine=null,ownPush="",hubPush="";
+const pendingLine=(new URLSearchParams(location.hash.slice(1))).get("line")||"";
 function showCode(){const has=normCode(deptCode).length>=6;
   $("chLbl").hidden=has;$("chIn").hidden=has;$("newCode").hidden=!has;
-  $("powerMsg").textContent=has?"מחלקה: "+deptName(curDept)+". מקלידים שם ולוחצים הפעלה.":"בפעם הראשונה צריך את קוד המחלקה מהמנהל."}
+  $("powerMsg").textContent=has?"מחלקה: "+deptName(curDept)+". מקלידים שם ולוחצים הפעלה.":"בפעם הראשונה צריך את קוד המחלקה מהמנהל.";
+  if(has&&typeof pendingLine==="string"&&pendingLine&&curDept===pendingLine){$("powerMsg").textContent="📞 קריאה נכנסת ל"+deptName(pendingLine)+". לחצו ענה.";$("powerBtn").textContent="ענה"}}
 try{$("nameIn").value=localStorage.getItem("mirs-name")||"";deptCode=localStorage.getItem("mirs-code")||"";curDept=localStorage.getItem("mirs-dept")||""}catch(e){}
 showCode();
 if(location.hash)try{window.history.replaceState(null,"",location.pathname)}catch(e){}
@@ -565,10 +581,41 @@ $("powerBtn").onclick=async()=>{
   ensureAC(); chirp("in"); $("powerMsg").textContent="מבקש גישה למיקרופון…";
   await setupMic(); powered=true; $("power").classList.remove("show");
   curCh=d.id; document.querySelector(".brand p").textContent="🔒 "+d.n;
-  loadKnown();await startNet(code);tagPush();$("shareBtn").classList.add("show");
+  loadKnown();await startNet(code);ownPush=pushTag;
+  if(d.hub){const k=await getLine(d.id);if(k)hubPush=await pushTagOf(k)}
+  tagPush();$("shareBtn").classList.add("show");drawLineBtns();
+  if(pendingLine&&pendingLine===d.id)joinLine(d.id,false);
   if(!micOk)showOver("אין מיקרופון","מצב האזנה בלבד","הדפדפן לא אישר גישה למיקרופון. אפשר עדיין לשמוע אחרים.",false,false);
   render();
 };
+/* ---------- call line: any department can call a hub (e.g. the Moked) ---------- */
+async function getLine(hub){
+  try{const c=JSON.parse(localStorage.getItem("mirs-line-"+hub)||"null");if(c&&c.code===deptCode&&c.key)return c.key}catch(e){}
+  try{const r=await fetch("/.netlify/functions/depts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"line",code:deptCode,hub})});
+    const j=await r.json();if(!j.ok)return "";try{localStorage.setItem("mirs-line-"+hub,JSON.stringify({code:deptCode,key:j.key}))}catch(e){}return j.key}catch(e){return ""}}
+function drawLineBtns(){const box=$("lineBtns");box.replaceChildren();if(!powered)return;
+  const mk=(txt,cls,fn)=>{const b=document.createElement("button");b.className="install show"+(cls?" "+cls:"");b.textContent=txt;b.onclick=fn;box.appendChild(b)};
+  if(onLine){mk("↩ חזרה לערוץ "+deptName(curDept),"back",leaveLine);return}
+  for(const h of DEPTS.filter(x=>x.hub)){if(h.id===curDept)mk("📞 פתיחת קו הקריאות של "+h.n,"",()=>joinLine(h.id,false));else mk("📞 קריאה ל"+h.n,"",()=>joinLine(h.id,true))}}
+function resetNet(){seen.clear();roster=[];if(rx.id)endRx();sel="all";tab="contacts"}
+async function joinLine(hub,caller){
+  if(!powered)return; ensureAC();
+  showOver(caller?"מתחבר ל"+deptName(hub)+"…":"מתחבר לקו…","","",true,false);
+  const key=await getLine(hub);
+  if(!key){showOver("אין חיבור לקו","","בדקו אינטרנט ונסו שוב",false,false);setTimeout(()=>{if(!rx.id&&!txId)hideOver()},3000);return}
+  resetNet();onLine={hub,caller};curCh="line-"+hub;loadKnown();await startNet(key);
+  document.querySelector(".brand p").textContent="📞 קו "+deptName(hub);drawLineBtns();render();
+  if(caller){chirp("alert");send({t:"ctl",type:"alert",to:"all",n:myName});
+    ring("all","line",{hub,hubName:deptName(hub),dept:deptName(curDept)});
+    showOver("קורא ל"+deptName(hub),"ממתינים למענה…","הטלפונים במוקד מצלצלים גם כשהאפליקציה סגורה",true,true)}
+  else{hideOver();chirp("in")}
+}
+async function leaveLine(){
+  if(!onLine)return; if(pressing)up(); resetNet();onLine=null;curCh=curDept;loadKnown();await startNet(deptCode);
+  document.querySelector(".brand p").textContent="🔒 "+deptName(curDept);hideOver();drawLineBtns();render()}
+window.addEventListener("hashchange",()=>{const h=(new URLSearchParams(location.hash.slice(1))).get("line");
+  if(h&&powered&&h===curDept&&!(onLine&&onLine.hub===h))joinLine(h,false);try{window.history.replaceState(null,"",location.pathname)}catch(e){}});
+
 /* ---------- send the department code to a colleague ---------- */
 $("shareBtn").onclick=async()=>{if(!deptCode)return;
   const pretty=deptCode.slice(0,5)+"-"+deptCode.slice(5),text="קוד מירס למחלקת "+deptName(curDept)+": "+pretty+"\n"+location.origin;
