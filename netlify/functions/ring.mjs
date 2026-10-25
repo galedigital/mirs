@@ -9,12 +9,12 @@ export default async (req) => {
 
   let b;
   try { b = await req.json(); } catch { return Response.json({ ok: false }, { status: 400 }); }
-  const ch = String(b.ch || "").replace(/\D/g, "").slice(0, 6);
+  const ch = String(b.ch || "").toLowerCase();
   const from = String(b.from || "");
   const to = String(b.to || "");
   const name = String(b.name || "מישהו").replace(/[<>]/g, "").slice(0, 18);
   const kind = b.kind === "talk" ? "talk" : "alert";
-  if (!ch || !ID.test(from) || !(to === "all" || ID.test(to))) return Response.json({ ok: false }, { status: 400 });
+  if (!/^[a-f0-9]{16}$/.test(ch) || !ID.test(from) || !(to === "all" || ID.test(to))) return Response.json({ ok: false }, { status: 400 });
 
   // simple throttle per sender+target
   const k = from + ">" + to, now = Date.now();
@@ -23,9 +23,9 @@ export default async (req) => {
 
   let url = String(b.url || "");
   const origin = new URL(req.url).origin;
-  if (!url.startsWith(origin)) url = origin + "/#" + ch;
+  if (!url.startsWith(origin) || url.includes("#")) url = origin + "/";
 
-  const text = kind === "talk" ? `${name} מנסה לדבר איתך בערוץ ${ch}` : `${name} קורא לך בערוץ ${ch}`;
+  const text = kind === "talk" ? `${name} מנסה לדבר איתך במירס` : `${name} קורא לך במירס`;
   const body = {
     app_id: appId,
     target_channel: "push",
