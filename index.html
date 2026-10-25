@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מירס</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#16191C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="מירס">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#D3D6D8; --page-ink:#2A2E31; --page-soft:#5C6266;
+  --body:#24292E; --body-hi:#353B41; --rubber:#15181B; --rubber-hi:#262B30;
+  --safety:#F2B705; --safety-ink:#2A2100;
+  --lcd:#0F1316; --lcd-hi:#1A2025; --lcd-ink:#ECEFF1; --lcd-dim:#7D8790;
+  --key:#3D4349; --key-ink:#E8EAEC; --red:#D64535; --green:#3FA34D;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --page:#1A1D1F; --page-ink:#E3E5E6; --page-soft:#9BA2A7; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --page:#1A1D1F; --page-ink:#E3E5E6; --page-soft:#9BA2A7; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--page);color:var(--page-ink);font-family:"Rubik","Arial Hebrew",Arial,sans-serif;
+  display:flex;flex-direction:column;align-items:center;padding:28px 12px 28px;-webkit-tap-highlight-color:transparent}
+.device{position:relative;width:min(340px,92vw);background:linear-gradient(160deg,var(--body-hi),var(--body) 45%,var(--rubber));
+  border-radius:40px;padding:18px 18px 24px;border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -6px 14px rgba(0,0,0,.35),0 24px 40px -18px rgba(0,0,0,.55)}
+.antenna{display:none;position:absolute;top:-58px;left:34px;width:20px;height:72px;background:linear-gradient(90deg,var(--rubber),var(--rubber-hi),var(--rubber));border-radius:10px 10px 4px 4px;z-index:-1}
+.ptt-side{position:absolute;right:-13px;top:120px;width:16px;height:96px;border:0;border-radius:8px 4px 4px 8px;cursor:pointer;
+  background:linear-gradient(90deg,#b88a00,var(--safety));touch-action:none}
+.ptt-side.on{transform:translateX(-3px);filter:brightness(.9)}
+.top{display:flex;justify-content:space-between;align-items:center;padding:0 10px 10px}
+.speaker{display:grid;grid-template-columns:repeat(9,6px);gap:4px}
+.speaker i{width:6px;height:6px;border-radius:50%;background:var(--rubber)}
+.led{width:10px;height:10px;border-radius:50%;background:#2a2f33;box-shadow:inset 0 1px 2px rgba(0,0,0,.6);transition:background .1s}
+.led.tx{background:var(--red);box-shadow:0 0 10px var(--red)}
+.led.rx{background:var(--green);box-shadow:0 0 10px var(--green)}
+.bezel{background:#08090A;border-radius:22px;padding:8px}
+.lcd{background:radial-gradient(ellipse at 50% 0%,var(--lcd-hi),var(--lcd) 75%);color:var(--lcd-ink);border-radius:16px;height:270px;
+  display:flex;flex-direction:column;overflow:hidden;position:relative}
+.status{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:8px 12px;font-size:.72rem;font-weight:500;color:var(--lcd-dim)}
+#title{color:var(--lcd-ink);font-weight:700}
+.bars{display:flex;gap:2px;align-items:flex-end;direction:ltr}
+.bars b{width:3px;border-radius:1px;background:var(--safety)}
+.bars.off b{background:#3A4148}
+.view{flex:1;overflow:hidden;position:relative}
+.list{list-style:none;margin:0;padding:2px 0}
+.list{padding:2px 6px}
+.list li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;font-size:.92rem;cursor:pointer;border-radius:10px}
+.list li small{font-size:.7rem;opacity:.75;white-space:nowrap}
+.list li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list li.sel{background:var(--safety);color:#1A1400}
+.list li.note{cursor:default;font-size:.8rem;color:var(--lcd-dim);display:block;text-align:center;padding:14px 12px;line-height:1.5}
+.over{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center;background:var(--lcd);padding:10px}
+.over.show{display:flex}
+.who{font-size:1.4rem;font-weight:900;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub{font-size:.8rem}
+.state{font-size:.8rem;font-weight:700;padding:3px 12px;background:var(--safety);color:#1A1400;border-radius:99px}
+.timer{font-size:1.1rem;font-variant-numeric:tabular-nums;direction:ltr}
+.wave{display:flex;gap:3px;height:22px;align-items:center;direction:ltr}
+.wave i{width:4px;height:4px;background:var(--safety);border-radius:2px}
+.live .wave i{animation:w .5s ease-in-out infinite alternate}
+.wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.2s}.wave i:nth-child(4){animation-delay:.3s}.wave i:nth-child(5){animation-delay:.15s}
+@keyframes w{to{height:20px}}
+#power label{font-size:.85rem;font-weight:500}
+#power input{font:inherit;font-size:1rem;width:85%;padding:7px 8px;border:1px solid #3A4148;border-radius:10px;background:var(--lcd-hi);color:var(--lcd-ink);text-align:center}
+#power button{font:inherit;font-weight:900;font-size:1rem;padding:8px 26px;border:0;border-radius:99px;background:var(--safety);color:#1A1400;cursor:pointer;margin-top:4px}
+#power p{margin:0;font-size:.75rem;line-height:1.45;color:var(--lcd-dim)}
+.msg{font-size:.78rem;line-height:1.45;padding:0 6px}
+.soft{display:flex;justify-content:space-between;padding:6px 14px 8px;font-size:.75rem;font-weight:700;color:var(--lcd-dim)}
+.nav{display:grid;grid-template-columns:1fr 92px 1fr;align-items:center;gap:8px;margin:16px 4px 12px}
+.k{border:0;font:inherit;color:var(--key-ink);background:linear-gradient(var(--body-hi),var(--key));border-radius:14px;padding:10px 0;font-weight:700;font-size:.85rem;cursor:pointer;
+  box-shadow:0 3px 0 var(--rubber),inset 0 1px 0 rgba(255,255,255,.15)}
+.k:active{transform:translateY(2px);box-shadow:0 1px 0 var(--rubber)}
+.k:focus-visible,.ptt:focus-visible,.ptt-side:focus-visible,.dpad button:focus-visible{outline:3px solid var(--safety);outline-offset:2px}
+.dpad{position:relative;width:92px;height:92px;border-radius:50%;background:linear-gradient(var(--body-hi),var(--key));box-shadow:0 3px 0 var(--rubber)}
+.dpad button{position:absolute;border:0;background:none;color:var(--key-ink);font-size:.9rem;cursor:pointer;width:32px;height:32px;border-radius:50%}
+.dpad .u{top:2px;left:30px}.dpad .d{bottom:2px;left:30px}.dpad .l{left:2px;top:30px}.dpad .r{right:2px;top:30px}
+.dpad .ok{top:26px;left:26px;width:40px;height:40px;background:var(--rubber-hi);font-weight:700;font-size:.75rem}
+.row{display:flex;gap:10px;margin:0 4px 14px}
+.row .k{flex:1}
+.k.green{background:linear-gradient(#4fb85c,var(--green))}
+.k.blue{background:linear-gradient(#4d8fe0,#2F6FC0)}
+.links{display:none;gap:8px;margin-top:4px}.links.show{display:flex}
+.links a{font-size:.8rem;font-weight:700;color:#1A1400;background:var(--safety);border-radius:99px;padding:5px 12px;text-decoration:none}
+.install{display:none;margin-top:18px;border:0;font:inherit;font-weight:700;font-size:.9rem;padding:10px 20px;border-radius:99px;background:var(--safety);color:#1A1400;cursor:pointer}
+.install.show{display:inline-block}
+.k.red{background:linear-gradient(#e2594a,var(--red))}
+.ptt{display:block;width:100%;border:0;font:inherit;font-weight:900;font-size:1.15rem;color:var(--safety-ink);background:linear-gradient(#ffcf33,var(--safety));
+  border-radius:16px;padding:18px 0;cursor:pointer;box-shadow:0 5px 0 #8f6b00,inset 0 1px 0 rgba(255,255,255,.4);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.ptt.on{transform:translateY(4px);box-shadow:0 1px 0 #8f6b00;filter:brightness(.95)}
+.ptt span{display:block;font-size:.72rem;font-weight:500;margin-top:2px;opacity:.8}
+.hint{margin-top:20px;max-width:340px;font-size:.85rem;color:var(--page-soft);text-align:center;line-height:1.6}
+.brand{text-align:center;margin-bottom:22px}
+.brand h1{margin:0;font-size:2rem;font-weight:900;letter-spacing:-.02em;line-height:1}
+.brand h1 em{font-style:normal;color:var(--safety);text-shadow:0 1px 0 rgba(0,0,0,.25)}
+.brand p{margin:6px 0 0;font-size:.9rem;color:var(--page-soft)}
+.copy{margin-top:28px;font-size:.72rem;color:var(--page-soft);opacity:.85;text-align:center}
+@media (prefers-reduced-motion:reduce){.live .wave i{animation:none;height:14px}}
+</style>
+</head>
+<body>
+<header class="brand"><h1>מירס<em>.</em></h1><p>לחץ ודבר מכל טלפון, עם הקלטות ומיקום</p></header>
+<div class="device" role="application" aria-label="מכשיר מירס">
+  <div class="antenna" aria-hidden="true"></div>
+  <button class="ptt-side" id="pttSide" aria-label="כפתור דיבור צדדי"></button>
+  <div class="top">
+    <div class="speaker" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="led" id="led" aria-hidden="true"></div>
+  </div>
+  <div class="bezel">
+    <div class="lcd">
+      <div class="status">
+        <span class="bars off" id="bars" aria-hidden="true"><b style="height:4px"></b><b style="height:6px"></b><b style="height:8px"></b><b style="height:10px"></b></span>
+        <span id="title">מירס</span>
+        <span id="online">מתחבר…</span>
+      </div>
+      <div class="view">
+        <ul class="list" id="list" role="listbox" aria-label="אנשי קשר"></ul>
+        <div class="over" id="call" aria-live="polite">
+          <div class="state" id="cState"></div>
+          <div class="who" id="cWho"></div>
+          <div class="sub" id="cSub"></div>
+          <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="timer" id="cTime"></div>
+          <div class="links" id="cLinks"><a id="lnkW" target="_blank" rel="noopener">וייז</a><a id="lnkG" target="_blank" rel="noopener">גוגל מפות</a></div>
+        </div>
+        <div class="over show" id="power">
+          <label for="nameIn">שם המכשיר</label>
+          <input id="nameIn" maxlength="18" placeholder="למשל: דנה" autocomplete="off">
+          <label for="chIn">ערוץ (זהה בכל המכשירים)</label>
+          <input id="chIn" maxlength="6" inputmode="numeric" value="1" autocomplete="off">
+          <button id="powerBtn">הפעלה</button>
+          <p id="powerMsg">הדפדפן יבקש גישה למיקרופון.</p>
+        </div>
+      </div>
+      <div class="soft"><span id="softR">אנשי קשר</span><span id="softL">היסטוריה</span></div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="k" id="kR" aria-label="אנשי קשר">◀︎◀︎</button>
+    <div class="dpad">
+      <button class="u" id="up" aria-label="למעלה">▲</button>
+      <button class="r" id="right" aria-label="אנשי קשר">▶</button>
+      <button class="ok" id="ok" aria-label="אישור">OK</button>
+      <button class="l" id="left" aria-label="היסטוריה">◀</button>
+      <button class="d" id="down" aria-label="למטה">▼</button>
+    </div>
+    <button class="k" id="kL" aria-label="היסטוריה">▶︎▶︎</button>
+  </div>
+  <div class="row">
+    <button class="k green" id="alert">התראה</button>
+    <button class="k blue" id="loc">מיקום</button>
+    <button class="k red" id="end">ניתוק</button>
+  </div>
+  <button class="ptt" id="ptt">לחץ ודבר<span>החזיקו לשידור, שחררו להאזנה</span></button>
+</div>
+<p class="hint">פותחים את הקישור בשני טלפונים או יותר, מקלידים שם ואותו מספר ערוץ, בוחרים למי לדבר ומחזיקים את הכפתור הצהוב. הקול עובר בזמן אמת, בלי התחברות.</p>
+<button class="install" id="install">התקנה כאפליקציה</button>
+<button class="install" id="pushBtn"></button>
+<p class="hint" id="iosHint" hidden>להתקנה באייפון: כפתור השיתוף בספארי ואז ״הוספה למסך הבית״.</p>
+<footer class="copy">© 2026 גל מהדיגיטל. כל הזכויות שמורות.</footer>
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.14.1/dist/mqtt.min.js"></script>
+
+<script>
+const $=id=>document.getElementById(id);
+const list=$("list"),callEl=$("call"),led=$("led");
+let myId=null,myName="",myTx=false,powered=false,tab="contacts",sel="all",netOk=false,roster=[];
+let txRec=[],locOpen=null,outGain=null;
+let ac=null,micOk=false,txId=null,txTo="all",seq=0,pending=[],carry=0,tick=null;
+let rx={id:null,peer:null,name:"",last:0,next:0,dog:null};
+const history=[];
+
+/* ---------- network: relay server, works on Wi-Fi and cellular ---------- */
+const BROKERS=["wss://broker.emqx.io:8084/mqtt","wss://broker.hivemq.com:8884/mqtt","wss://test.mosquitto.org:8081"];
+let cli=null,base="",bi=0,seen=new Map(),beat=null;
+try{myId=localStorage.getItem("mirs-id")}catch(e){}
+if(!myId||!/^m[a-z0-9]{6,12}$/.test(myId)){myId="m"+Math.random().toString(36).slice(2,10);try{localStorage.setItem("mirs-id",myId)}catch(e){}}
+let known={},curCh="";
+function loadKnown(){try{known=JSON.parse(localStorage.getItem("mirs-known-"+curCh)||"{}")||{}}catch(e){known={}}}
+function saveKnown(){try{localStorage.setItem("mirs-known-"+curCh,JSON.stringify(known))}catch(e){}}
+function setNet(ok){netOk=ok;$("bars").classList.toggle("off",!ok);render()}
+function startNet(ch){base="mirsdemo-il-v2/"+ch;connectBroker()}
+function connectBroker(){
+  if(cli)try{cli.end(true)}catch(e){}
+  const url=BROKERS[bi%BROKERS.length]; let opened=false;
+  cli=mqtt.connect(url,{clientId:myId+"-"+bi,keepalive:20,reconnectPeriod:2000,connectTimeout:15000,clean:true,
+    will:{topic:base+"/p",payload:JSON.stringify({t:"bye",from:myId}),qos:0,retain:false}});
+  const c=cli;
+  const fail=setTimeout(()=>{if(!opened&&cli===c){connectBroker()}},20000);
+  c.on("connect",()=>{opened=true;clearTimeout(fail);c.subscribe(base+"/#",{qos:0},()=>{setNet(true);hello()})});
+  c.on("close",()=>{if(cli===c)setNet(false)});
+  c.on("offline",()=>{if(cli===c)setNet(false)});
+  c.on("message",(topic,payload)=>{let d;try{d=JSON.parse(payload.toString())}catch(e){return}
+    if(!d||typeof d!=="object"||typeof d.from!=="string"||d.from===myId)return;
+    if(d.t==="hi"){seen.set(d.from,{id:d.from,name:String(d.name||"").slice(0,18),tx:!!d.tx,at:Date.now()});
+      if(d.ask)hello();rebuild();return}
+    if(d.t==="bye"){seen.delete(d.from);rebuild();return}
+    if(d.t==="voice"||d.t==="ctl"){const s=seen.get(d.from);if(s)s.at=Date.now();deliver(d)}});
+  clearInterval(beat);beat=setInterval(()=>{hello();const now=Date.now();let ch=false;
+    for(const[k,v]of seen)if(now-v.at>12000){seen.delete(k);ch=true}if(ch)rebuild()},4000);
+}
+let asked=false;
+function hello(){if(!cli||!cli.connected)return;const m={t:"hi",from:myId,name:myName,tx:myTx};if(!asked){m.ask=1;asked=true}
+  cli.publish(base+"/p",JSON.stringify(m))}
+function rebuild(){roster=[{id:myId,name:myName,tx:myTx}].concat([...seen.values()]);let ch=false;for(const s of seen.values())if(s.name&&(!known[s.id]||known[s.id].name!==s.name)){known[s.id]={name:s.name};ch=true}if(ch)saveKnown();onRoster()}
+function send(msg){msg.from=myId;if(cli&&cli.connected)cli.publish(base+"/m",JSON.stringify(msg))}
+function setTx(v){myTx=v;hello();rebuild()}
+function onRoster(){if(rx.id&&!roster.some(x=>x.id===rx.peer))endRx();render()}
+function deliver(d){if(!powered)return;if(d.t==="voice")onVoice(d);else onCtl(d)}
+
+/* ---------- audio helpers ---------- */
+function ensureAC(){ try{if(navigator.audioSession&&navigator.audioSession.type!=="play-and-record")navigator.audioSession.type="play-and-record"}catch(e){}
+  if(!ac){ac=new (window.AudioContext||window.webkitAudioContext)()} if(ac.state==="suspended")ac.resume(); }
+function tone(f,t0,d,v=.16){const o=ac.createOscillator(),g=ac.createGain();o.type="square";o.frequency.value=f;
+  g.gain.setValueAtTime(v,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g).connect(ac.destination);o.start(t0);o.stop(t0+d+.02)}
+function chirp(kind,at){ if(!ac)return; const t=Math.max(ac.currentTime,at||0);
+  if(kind==="start"){tone(1950,t,.05);tone(2350,t+.06,.05);tone(1950,t+.12,.07)}
+  else if(kind==="end"){tone(2350,t,.05);tone(1650,t+.06,.08)}
+  else if(kind==="in"){tone(1650,t,.05);tone(2150,t+.07,.06)}
+  else if(kind==="busy"){tone(480,t,.18,.2);tone(480,t+.3,.18,.2)}
+  else if(kind==="alert"){for(let i=0;i<3;i++)tone(2600,t+i*.18,.1,.15)} }
+function muEnc(s){s=Math.max(-1,Math.min(1,s));let x=Math.round(s*32767);const sign=x<0?0x80:0;if(x<0)x=-x;x+=132;if(x>32635)x=32635;
+  let e=7;for(let m=0x4000;(x&m)===0&&e>0;m>>=1)e--;const man=(x>>(e+3))&0x0F;return (~(sign|(e<<4)|man))&0xFF}
+function muDec(b){b=(~b)&0xFF;const sign=b&0x80,e=(b>>4)&7,man=b&0x0F;let x=(((man<<3)+132)<<e)-132;return (sign?-x:x)/32768}
+function downsample(inp,rate){const r=rate/8000,out=[];while(carry<inp.length){const a=Math.floor(carry),b=Math.min(inp.length,Math.floor(carry+r));
+  let s=0,n=0;for(let i=a;i<b;i++){s+=inp[i];n++}out.push(n?s/n:inp[a]);carry+=r}carry-=inp.length;return out}
+function toB64(u8){let s="";for(let i=0;i<u8.length;i++)s+=String.fromCharCode(u8[i]);return btoa(s)}
+function fromB64(b){const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
+
+async function setupMic(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    const src=ac.createMediaStreamSource(stream),proc=ac.createScriptProcessor(4096,1,1),sink=ac.createGain();sink.gain.value=0;
+    proc.onaudioprocess=e=>{ if(!txId)return; const d=downsample(e.inputBuffer.getChannelData(0),ac.sampleRate);
+      for(const v of d){const b=muEnc(v*1.4);pending.push(b);if(txRec.length<8000*120)txRec.push(b)} while(pending.length>=2000)sendChunk(pending.splice(0,2000)); };
+    src.connect(proc);proc.connect(sink);sink.connect(ac.destination);micOk=true;
+  }catch(e){ micOk=false; }
+}
+function sendChunk(arr){ if(!txId)return; send({t:"voice",s:txId,q:seq++,d:toB64(Uint8Array.from(arr)),to:txTo,n:myName}); }
+
+/* ---------- screen ---------- */
+function peerName(id,fallback){const p=roster.find(x=>x.id===id)||known[id];return String((p&&p.name)||(typeof fallback==="string"&&fallback)||"מכשיר").slice(0,18)}
+function others(){return roster.filter(x=>x.id!==myId&&x.name)}
+function items(){
+  if(tab==="history")return history.map((h,i)=>({key:"h"+i,n:h.n,sub:(h.audio?"▶ "+secs(h.audio)+" שנ׳ · ":h.loc?"📍 · ":"")+h.t,ref:h.ref,h}));
+  const o=others();
+  const off=Object.keys(known).filter(id=>id!==myId&&!o.some(p=>p.id===id)).map(id=>({key:id,n:known[id].name,sub:"לא מחובר"}));
+  return [{key:"all",n:"👥 כל הערוץ",sub:o.length?o.length+" מחוברים":""}].concat(o.map(p=>({key:p.id,n:p.name,sub:p.tx?"משדר":"זמין"})),off);
+}
+function li(text,sub,cls){const el=document.createElement("li");if(cls)el.className=cls;const a=document.createElement("span");a.textContent=text;el.appendChild(a);
+  if(sub){const b=document.createElement("small");b.textContent=sub;el.appendChild(b)}return el}
+function render(){
+  $("title").textContent=tab==="history"?"היסטוריה":"אנשי קשר";
+  const it=items();list.replaceChildren();
+  if(tab==="history"&&!it.length){const n=li("עדיין אין שיחות. כל שיחה נשמרת כאן להשמעה חוזרת.",null,"note");list.appendChild(n);return}
+  if(!it.some(x=>x.key===sel))sel=it[0]?it[0].key:"all";
+  for(const x of it){const el=li(x.n,x.sub,x.key===sel?"sel":"");el.setAttribute("role","option");el.setAttribute("aria-selected",x.key===sel);el.dataset.k=x.key;list.appendChild(el)}
+  if(tab==="contacts"&&it.length===1&&!Object.keys(known).length){list.appendChild(li("פתחו את הקישור בטלפון נוסף והפעילו אותו. הוא יופיע כאן.",null,"note"))}
+  const s=list.querySelector(".sel");if(s)s.scrollIntoView({block:"nearest"});
+  $("online").textContent=!powered?"כבוי":netOk?Math.max(1,roster.length)+" בערוץ":"מתחבר…";
+}
+list.addEventListener("click",e=>{const el=e.target.closest("li[data-k]");if(el){sel=el.dataset.k;render();if(tab==="history")act()}});
+function move(d){const it=items();if(!it.length)return;let i=it.findIndex(x=>x.key===sel);i=(i+d+it.length)%it.length;sel=it[i].key;render()}
+function go(t){tab=t;sel=null;render()}
+$("up").onclick=()=>move(-1);$("down").onclick=()=>move(1);
+$("kR").onclick=$("right").onclick=()=>go("contacts");
+$("kL").onclick=$("left").onclick=()=>go("history");
+$("ok").onclick=()=>{if(tab==="history")act()};
+function act(){const it=items().find(x=>x.key===sel);if(!it||!it.h)return;const h=it.h;
+  if(h.audio)playRec(h);else if(h.loc)showLoc(h.n.replace(/^\S+\s/,""),h.loc,false);else if(h.ref){tab="contacts";sel=h.ref;render()}}
+let recSrc=null;
+function playRec(h){if(txId||rx.id)return;ensureAC();if(recSrc)try{recSrc.stop()}catch(e){}
+  const buf=ac.createBuffer(1,h.audio.length,8000),ch=buf.getChannelData(0);for(let i=0;i<h.audio.length;i++)ch[i]=muDec(h.audio[i]);
+  const s=ac.createBufferSource();s.buffer=buf;s.connect(ac.destination);s.start();recSrc=s;
+  showOver("השמעה",h.n,h.t,true,true);s.onended=()=>{if(recSrc===s){recSrc=null;if(!rx.id&&!txId)hideOver()}}}
+function showLoc(name,loc,fresh){showOver(fresh?"מיקום התקבל":"מיקום",name,"דיוק כ־"+Math.round(loc.acc||0)+" מ׳",false,false);
+  $("lnkW").href="https://waze.com/ul?ll="+loc.lat+","+loc.lng+"&navigate=yes";$("lnkG").href="https://www.google.com/maps?q="+loc.lat+","+loc.lng;
+  $("cLinks").classList.add("show");clearTimeout(locOpen);locOpen=setTimeout(()=>{if(!rx.id&&!txId&&!pressing)hideOver()},12000)}
+function targetKey(){if(tab==="history"){const h=items().find(x=>x.key===sel);return h&&h.ref?h.ref:"all"}return sel||"all"}
+function targetLabel(k){return k==="all"?"כל המחוברים":peerName(k)}
+
+function showOver(state,who,sub,live,timer){clearTimeout(locOpen);$("cLinks").classList.remove("show");callEl.classList.add("show");callEl.classList.toggle("live",!!live);
+  $("cState").textContent=state;$("cWho").textContent=who;$("cSub").textContent=sub||"";$("cTime").textContent=timer?"00:00":"";
+  clearInterval(tick);if(timer){const t0=Date.now();tick=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);$("cTime").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")},250)}}
+function hideOver(){clearInterval(tick);callEl.classList.remove("show","live");led.className="led";render()}
+function log(n,ref,extra){const e=Object.assign({n,t:new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"}),ref},extra||{});
+  if(e.audio&&!e.audio.length)delete e.audio;history.unshift(e);if(history.length>40)history.pop()}
+function secs(a){return Math.max(1,Math.round(a.length/8000))}
+
+/* ---------- transmit ---------- */
+let pressing=false;
+function down(e){
+  if(e)e.preventDefault(); if(pressing||!powered)return; pressing=true;
+  $("ptt").classList.add("on");$("pttSide").classList.add("on"); ensureAC();
+  if(rx.id){chirp("busy");showOver("תפוס",rx.name,"מישהו אחר משדר כרגע",false,false);return}
+  if(!netOk){chirp("busy");showOver("אין קליטה","לא מחובר","בדקו את החיבור ונסו שוב",false,false);return}
+  {const tk=targetKey();if(tk!=="all"&&!roster.some(x=>x.id===tk)){const ok=ring(tk,"talk");chirp(ok?"alert":"busy");
+    showOver(ok?"נשלחה קריאה":"לא מחובר",targetLabel(tk),ok?"יקבל התראה בטלפון":"אי אפשר לשלוח קריאה כרגע",false,false);return}}
+  if(!micOk){chirp("busy");showOver("אין מיקרופון","אפשר רק להאזין","אשרו גישה למיקרופון והפעילו מחדש",false,false);return}
+  txTo=targetKey(); txId=Math.random().toString(36).slice(2,10); seq=0; pending=[]; carry=0; txRec=[];
+  chirp("start"); led.className="led tx"; if(navigator.vibrate)navigator.vibrate(30);
+  setTx(true);
+  showOver("משדר אל",targetLabel(txTo),txTo==="all"?"שיחה קבוצתית":"שיחה פרטית",true,true);
+}
+function up(){
+  if(!pressing)return; pressing=false; $("ptt").classList.remove("on");$("pttSide").classList.remove("on");
+  if(!txId){setTimeout(()=>{if(!rx.id)hideOver()},900);return}
+  if(pending.length)sendChunk(pending.splice(0));
+  send({t:"voice",s:txId,q:seq++,end:true,to:txTo,n:myName});
+  txId=null; chirp("end"); setTx(false);
+  log("↑ "+targetLabel(txTo),txTo,{audio:Uint8Array.from(txRec)}); txRec=[]; led.className="led"; setTimeout(()=>{if(!rx.id&&!pressing)hideOver()},500);
+}
+
+/* ---------- receive ---------- */
+function startRx(d){
+  rx.id=d.s;rx.peer=d.from;rx.name=peerName(d.from,d.n);rx.next=0;rx.rec=[];rx.last=Date.now();rx.group=d.to==="all";
+  chirp("in"); led.className="led rx"; if(navigator.vibrate)navigator.vibrate(60);
+  showOver("מדבר",rx.name,rx.group?"בשיחה קבוצתית":"אליך",true,true);
+  clearInterval(rx.dog); rx.dog=setInterval(()=>{if(rx.id&&Date.now()-rx.last>2000)endRx()},500);
+}
+function endRx(){
+  if(!rx.id)return; clearInterval(rx.dog); const left=ac?Math.max(0,rx.next-ac.currentTime):0;
+  let tot=0;for(const c of rx.rec)tot+=c.length;const all=new Uint8Array(tot);let o=0;for(const c of rx.rec){all.set(c,o);o+=c.length}
+  log("↓ "+rx.name,rx.peer,{audio:all});rx.rec=[]; const id=rx.id; rx.id=null;
+  setTimeout(()=>{chirp("end"); if(!rx.id&&!txId){showOver("פנוי, אפשר לענות",rx.name,"",false,false);setTimeout(()=>{if(!rx.id&&!txId&&!pressing)hideOver()},2500)}},left*1000);
+  sel=rx.group?"all":rx.peer;
+}
+function play(b64){
+  let u;try{u=fromB64(b64)}catch(e){return} if(!u.length||u.length>4000)return;
+  const buf=ac.createBuffer(1,u.length,8000),ch=buf.getChannelData(0);for(let i=0;i<u.length;i++)ch[i]=muDec(u[i]);
+  if(rx.rec&&rx.rec.length<500)rx.rec.push(u);
+  if(!outGain){outGain=ac.createGain();outGain.gain.value=1.8;outGain.connect(ac.destination)}
+  const src=ac.createBufferSource();src.buffer=buf;src.connect(outGain);
+  const t=Math.max(ac.currentTime+.25,rx.next);src.start(t);rx.next=t+buf.duration;
+}
+function onVoice(d){
+  if(typeof d.s!=="string"||d.from===myId)return;
+  if(d.to!=="all"&&d.to!==myId)return;
+  if(rx.id!==d.s){ if(d.end)return; if(rx.id&&Date.now()-rx.last<2000)return; if(txId)return; startRx(d); }
+  rx.last=Date.now();
+  if(d.end){endRx();return}
+  if(typeof d.d==="string")play(d.d);
+}
+function onCtl(d){
+  if(d.from===myId)return; if(d.to!=="all"&&d.to!==myId)return;
+  if(d.type==="loc"){const lat=+d.lat,lng=+d.lng;if(!isFinite(lat)||!isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180)return;if(rx.id||txId)return;
+    const n=peerName(d.from,d.n),loc={lat,lng,acc:+d.acc||0};chirp("in");if(navigator.vibrate)navigator.vibrate(80);log("📍 "+n,d.from,{loc});showLoc(n,loc,true);return}
+  if(d.type!=="alert")return;
+  if(rx.id||txId)return; chirp("alert"); if(navigator.vibrate)navigator.vibrate([200,100,200]);
+  const n=peerName(d.from,d.n); showOver("התראה",n,"מבקש שתחזרו אליו",false,false); sel=d.from; log("🔔 "+n,d.from);
+  setTimeout(()=>{if(!rx.id&&!txId&&!pressing)hideOver()},3500);
+}
+
+/* ---------- controls ---------- */
+["ptt","pttSide"].forEach(id=>{const b=$(id);
+  b.addEventListener("pointerdown",e=>{try{b.setPointerCapture(e.pointerId)}catch(_){}down(e)});
+  b.addEventListener("pointerup",up);b.addEventListener("pointercancel",up);b.addEventListener("lostpointercapture",up);
+  b.addEventListener("contextmenu",e=>e.preventDefault());
+  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat)down(e)});
+  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter")up()});
+});
+document.addEventListener("keydown",e=>{if(["BUTTON","INPUT"].includes(e.target.tagName))return;
+  if(e.key===" "&&!e.repeat)down(e); if(e.key==="ArrowUp")move(-1); if(e.key==="ArrowDown")move(1)});
+document.addEventListener("keyup",e=>{if(e.key===" "&&!["BUTTON","INPUT"].includes(e.target.tagName))up()});
+$("end").onclick=()=>{if(pressing)up();if(rx.id)endRx();if(recSrc){try{recSrc.stop()}catch(e){}recSrc=null}hideOver()};
+$("alert").onclick=()=>{
+  if(!powered||txId)return; ensureAC(); const to=targetKey();
+  send({t:"ctl",type:"alert",to,n:myName}); ring(to,"alert"); chirp("alert"); led.className="led tx";
+  showOver("נשלחה התראה",targetLabel(to),"",false,false); log("🔔 ↑ "+targetLabel(to),to);
+  setTimeout(()=>{led.className="led"},600); setTimeout(()=>{if(!rx.id&&!txId)hideOver()},2200);
+};
+
+$("loc").onclick=()=>{
+  if(!powered||!netOk||txId)return; ensureAC(); const to=targetKey();
+  if(!navigator.geolocation){showOver("אין מיקום","המכשיר לא תומך","",false,false);return}
+  showOver("מאתר מיקום…",targetLabel(to),"",true,false);
+  navigator.geolocation.getCurrentPosition(p=>{const loc={lat:+p.coords.latitude.toFixed(6),lng:+p.coords.longitude.toFixed(6),acc:Math.round(p.coords.accuracy)};
+    send({t:"ctl",type:"loc",to,lat:loc.lat,lng:loc.lng,acc:loc.acc,n:myName}); chirp("start"); log("📍 ↑ "+targetLabel(to),to,{loc});
+    showOver("מיקום נשלח",targetLabel(to),"דיוק כ־"+loc.acc+" מ׳",false,false); setTimeout(()=>{if(!rx.id&&!txId)hideOver()},2200)},
+   ()=>{chirp("busy");showOver("אין מיקום","לא התקבלה הרשאה","אשרו גישה למיקום בהגדרות הדפדפן",false,false);setTimeout(()=>{if(!rx.id&&!txId)hideOver()},3000)},
+   {enableHighAccuracy:true,timeout:12000,maximumAge:20000});
+};
+/* ---------- push: calls while the app is closed (OneSignal) ---------- */
+let OS=null;const lastRing={};
+window.OneSignalDeferred=window.OneSignalDeferred||[];
+async function initPush(){
+  let appId="88290d9d-35aa-414d-bac4-74227002a020";
+  if(!appId)return;
+  OneSignalDeferred.push(async O=>{
+    try{await O.init({appId,serviceWorkerPath:"sw.js",serviceWorkerParam:{scope:"/"},notifyButton:{enable:false},promptOptions:{autoPrompt:false}})}catch(e){return}
+    OS=O;updatePushUI();if(powered)tagPush();
+    try{O.Notifications.addEventListener("permissionChange",updatePushUI)}catch(e){}
+  });
+}
+function tagPush(){if(!OS||!curCh)return;try{OS.login(myId);OS.User.addTags({ch:curCh,uid:myId,name:myName})}catch(e){}}
+function updatePushUI(){const b=$("pushBtn");if(!OS){b.classList.remove("show");return}
+  const iosNotInstalled=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!standalone;
+  b.classList.add("show");
+  if(iosNotInstalled){b.textContent="לקבלת קריאות באייפון: התקינו קודם למסך הבית";b.disabled=true;return}
+  const g=OS.Notifications.permission;b.disabled=!!g;b.textContent=g?"✓ קריאות פעילות גם כשהאפליקציה סגורה":"🔔 קבלת קריאות כשהאפליקציה סגורה"}
+function ring(to,kind){
+  if(!curCh)return false; const now=Date.now(); if(now-(lastRing[to]||0)<20000)return true; lastRing[to]=now;
+  fetch("/.netlify/functions/ring",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ch:curCh,to,from:myId,name:myName,kind,online:roster.map(x=>x.id).slice(0,60),url:location.origin+"/#"+curCh})}).catch(()=>{});
+  return true;
+}
+
+/* ---------- app install ---------- */
+let instEv=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();instEv=e;$("install").classList.add("show")});
+$("install").onclick=async()=>{if(!instEv)return;instEv.prompt();try{await instEv.userChoice}catch(e){}instEv=null;$("install").classList.remove("show")};
+const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!standalone)$("iosHint").hidden=false;
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js",{scope:"/"}).catch(()=>{}));
+$("pushBtn").onclick=async()=>{if(!OS)return;try{await OS.Notifications.requestPermission()}catch(e){}tagPush();updatePushUI()};
+initPush();
+
+/* ---------- power on ---------- */
+try{$("nameIn").value=localStorage.getItem("mirs-name")||"";$("chIn").value=localStorage.getItem("mirs-ch")||(location.hash.slice(1).replace(/\D/g,"")||"1")}catch(e){}
+$("nameIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("chIn").focus()});
+$("chIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("powerBtn").click()});
+$("powerBtn").onclick=async()=>{
+  const n=$("nameIn").value.trim().slice(0,18); if(!n){$("powerMsg").textContent="צריך שם כדי שהצד השני ידע מי מדבר.";$("nameIn").focus();return}
+  const ch=$("chIn").value.replace(/\D/g,"").slice(0,6); if(!ch){$("powerMsg").textContent="צריך מספר ערוץ, למשל 1.";$("chIn").focus();return}
+  if(typeof mqtt==="undefined"){$("powerMsg").textContent="רכיב החיבור לא נטען. בדקו אינטרנט ורעננו.";return}
+  myName=n; try{localStorage.setItem("mirs-name",n);localStorage.setItem("mirs-ch",ch)}catch(e){}
+  ensureAC(); chirp("in"); $("powerBtn").disabled=true; $("powerMsg").textContent="מבקש גישה למיקרופון…";
+  await setupMic(); powered=true; $("power").classList.remove("show"); $("title").textContent="ערוץ "+ch;
+  curCh=ch;loadKnown();startNet(ch);tagPush();
+  if(!micOk)showOver("אין מיקרופון","מצב האזנה בלבד","הדפדפן לא אישר גישה למיקרופון. אפשר עדיין לשמוע אחרים.",false,false);
+  render();
+};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&ac)ac.resume()});
+render();
+</script>
+</body>
+</html>
