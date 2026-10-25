@@ -219,8 +219,8 @@ body{background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 60%,var(--sky2
           <div class="links" id="cLinks"><a id="lnkW" target="_blank" rel="noopener">וייז</a><a id="lnkG" target="_blank" rel="noopener">גוגל מפות</a></div>
         </div>
         <div class="over show" id="power">
-          <label for="nameIn">שם המכשיר</label>
-          <input id="nameIn" maxlength="18" placeholder="למשל: דנה" autocomplete="off">
+          <label for="nameIn" hidden>שם המכשיר</label>
+          <input id="nameIn" hidden maxlength="18" placeholder="למשל: דנה" autocomplete="off">
           <label for="chSel" id="chSelLbl" hidden>ערוץ</label>
           <select id="chSel" hidden></select>
           <label for="chIn" id="chLbl">קוד המחלקה</label>
@@ -251,7 +251,7 @@ body{background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 60%,var(--sky2
   </div>
   <button class="ptt" id="ptt">לחץ ודבר<span>החזיקו לשידור, שחררו להאזנה</span></button>
 </div>
-<p class="hint">פותחים את הקישור בשני טלפונים או יותר, מקלידים שם וקוד מחלקה, בוחרים למי לדבר ומחזיקים את הכפתור הצהוב. הקול עובר בזמן אמת ומוצפן, ורק מי שיש לו את קוד המחלקה שומע.</p>
+<p class="hint">פותחים את הקישור בשני טלפונים או יותר, מקלידים קוד מחלקה, בוחרים למי לדבר ומחזיקים את הכפתור הצהוב. הקול עובר בזמן אמת ומוצפן, ורק מי שיש לו את קוד המחלקה שומע.</p>
 <button class="install" id="install">📲 התקנה כאפליקציה</button>
 <button class="install" id="pushBtn"></button>
 <div id="lineBtns" class="line-btns"></div>
@@ -288,7 +288,6 @@ body{background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 60%,var(--sky2
   <div class="gb">
     <h3>1. הפעלה</h3>
     <ol>
-      <li>מקלידים שם, כדי שהצד השני ידע מי מדבר.</li>
       <li>בפעם הראשונה מקלידים את <b>קוד המחלקה</b> (10 ספרות, מקבלים מהמנהל). האפליקציה מזהה לבד לאיזו מחלקה הוא שייך ומחברת לערוץ שלה.</li>
       <li>מהפעם השנייה הקוד שמור, ורק לוחצים הפעלה.</li>
       <li>לוחצים <b>הפעלה</b> ומאשרים גישה למיקרופון.</li>
@@ -650,7 +649,7 @@ function drawSel(){const a=savedCh(),S=$("chSel");S.replaceChildren();
   const show=a.length>0&&!/^0000/.test(deptCode);S.hidden=!show;$("chSelLbl").hidden=!show}
 function showCode(){const has=normCode(deptCode).length>=6;drawSel();
   $("chLbl").hidden=has;$("chIn").hidden=has;$("newCode").hidden=true;
-  $("powerMsg").textContent=has?"מחלקה: "+deptName(curDept)+". מקלידים שם ולוחצים הפעלה.":"בפעם הראשונה צריך את קוד המחלקה מהמנהל.";
+  $("powerMsg").textContent=has?"מחלקה: "+deptName(curDept)+". לוחצים הפעלה.":"בפעם הראשונה צריך את קוד המחלקה מהמנהל.";
   if(has&&typeof pendingLine==="string"&&pendingLine&&curDept===pendingLine){$("powerMsg").textContent="📞 קריאה נכנסת ל"+deptName(pendingLine)+". לחצו ענה.";$("powerBtn").textContent="ענה"}}
 try{$("nameIn").value=localStorage.getItem("mirs-name")||"";deptCode=localStorage.getItem("mirs-code")||"";curDept=localStorage.getItem("mirs-dept")||""}catch(e){}
 if(deptCode&&curDept&&!savedCh().some(x=>x.code===deptCode))rememberCh(deptCode,curDept);
@@ -663,10 +662,12 @@ $("chSel").onchange=()=>{const v=$("chSel").value,m=savedCh().find(x=>x.code===v
 $("swBtn").onclick=()=>{try{localStorage.removeItem("mirs-test")}catch(e){}location.reload()};
 if(location.hash)try{window.history.replaceState(null,"",location.pathname)}catch(e){}
 $("newCode").onclick=()=>{deptCode="";curDept="";$("chIn").value="";showCode();$("chIn").focus()};
+function autoName(){const u=navigator.userAgent,t=/iphone/i.test(u)?"אייפון":/ipad/i.test(u)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)?"אייפד":/android/i.test(u)?"אנדרואיד":"מחשב";
+  return t+" "+(100+(crypto.getRandomValues(new Uint16Array(1))[0]%900))}
 $("nameIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("powerBtn").click()});
 $("chIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("powerBtn").click()});
 $("powerBtn").onclick=async()=>{
-  const n=$("nameIn").value.trim().slice(0,18); if(!n){$("powerMsg").textContent="צריך שם כדי שהצד השני ידע מי מדבר.";$("nameIn").focus();return}
+  const n=($("nameIn").value.trim()||autoName()).slice(0,18);
   if(!window.crypto||!crypto.subtle){$("powerMsg").textContent="הדפדפן לא תומך בהצפנה. פתחו את האתר בכתובת https.";return}
   if(typeof mqtt==="undefined"){$("powerMsg").textContent="רכיב החיבור לא נטען. בדקו אינטרנט ורעננו.";return}
   const code=normCode(deptCode||$("chIn").value);
