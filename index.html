@@ -262,7 +262,13 @@ const TE=new TextEncoder(),TD=new TextDecoder();
 const hex=a=>Array.from(a,b=>b.toString(16).padStart(2,"0")).join("");
 const FINALS={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
 function normCode(v){return String(v||"").toLowerCase().replace(/[ךםןףץ]/g,c=>FINALS[c]).replace(/[^a-z0-9\u05d0-\u05ea]/g,"").slice(0,30)}
-const DEPTS=[{id:"moked",n:"מוקד",t:"a156735a33712b71"},{id:"env",n:"איכות הסביבה",t:"693fb8f346b07c67"},{id:"dover",n:"דוברות",t:"4f0fac11d079bcd0"},{id:"beaches",n:"חופים",t:"cbd81a76647baf7f"},{id:"tikshuv",n:"תקשוב",t:"4d3f39f77fd5d515"},{id:"shefa",n:"שפ״ע / תברואה",t:"333c61c16907ebcf"},{id:"pikuach",n:"פיקוח ואכיפה",t:"7c5c2d3d17c2b8cb"},{id:"bitachon",n:"ביטחון וחירום",t:"9cc7287503a484cc"}];
+let DEPTS=[{id:"moked",n:"מוקד",t:"a156735a33712b71"},{id:"env",n:"איכות הסביבה",t:"693fb8f346b07c67"},{id:"dover",n:"דוברות",t:"4f0fac11d079bcd0"},{id:"beaches",n:"חופים",t:"cbd81a76647baf7f"},{id:"tikshuv",n:"תקשוב",t:"4d3f39f77fd5d515"},{id:"shefa",n:"שפ״ע / תברואה",t:"333c61c16907ebcf"},{id:"pikuach",n:"פיקוח ואכיפה",t:"7c5c2d3d17c2b8cb"},{id:"bitachon",n:"ביטחון וחירום",t:"9cc7287503a484cc"}];
+// the list is managed from /admin; the built-in copy is only a fallback when offline
+try{const c=JSON.parse(localStorage.getItem("mirs-depts")||"null");if(Array.isArray(c)&&c.length)DEPTS=c}catch(e){}
+async function refreshDepts(){try{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),5000);
+  const r=await fetch("/.netlify/functions/depts",{cache:"no-store",signal:ctl.signal});clearTimeout(tm);
+  const d=await r.json();if(Array.isArray(d)&&d.length&&d.every(x=>x&&x.id&&x.t)){DEPTS=d;try{localStorage.setItem("mirs-depts",JSON.stringify(d))}catch(e){}}}catch(e){}}
+refreshDepts().then(()=>{if(!powered)showCode()});
 // t = one-way fingerprint of the department code (the code itself is not stored here)
 const deptName=id=>(DEPTS.find(d=>d.id===id)||{n:"ערוץ"}).n;
 
@@ -536,7 +542,6 @@ function showCode(){const has=normCode(deptCode).length>=6;
   $("chLbl").hidden=has;$("chIn").hidden=has;$("newCode").hidden=!has;
   $("powerMsg").textContent=has?"מחלקה: "+deptName(curDept)+". מקלידים שם ולוחצים הפעלה.":"בפעם הראשונה צריך את קוד המחלקה מהמנהל."}
 try{$("nameIn").value=localStorage.getItem("mirs-name")||"";deptCode=localStorage.getItem("mirs-code")||"";curDept=localStorage.getItem("mirs-dept")||""}catch(e){}
-if(!DEPTS.some(d=>d.id===curDept))deptCode="";
 showCode();
 if(location.hash)try{window.history.replaceState(null,"",location.pathname)}catch(e){}
 $("newCode").onclick=()=>{deptCode="";curDept="";$("chIn").value="";showCode();$("chIn").focus()};
@@ -549,9 +554,12 @@ $("powerBtn").onclick=async()=>{
   const code=normCode(deptCode||$("chIn").value);
   if(code.length<6){$("powerMsg").textContent="צריך את קוד המחלקה (10 ספרות). מקבלים מהמנהל.";$("chIn").focus();return}
   $("powerBtn").disabled=true;$("powerMsg").textContent="בודק קוד…";
-  await deriveChannel(code);
+  await refreshDepts(); await deriveChannel(code);
   const d=DEPTS.find(x=>x.t===codeTag);
-  if(!d){$("powerBtn").disabled=false;$("powerMsg").textContent="הקוד לא מוכר. בדקו שהקלדתם נכון.";$("chIn").focus();return}
+  if(!d){$("powerBtn").disabled=false;
+    if(deptCode){deptCode="";curDept="";try{localStorage.removeItem("mirs-code")}catch(e){}showCode();$("powerMsg").textContent="קוד המחלקה הוחלף. בקשו את הקוד החדש מהמנהל."}
+    else $("powerMsg").textContent="הקוד לא מוכר. בדקו שהקלדתם נכון.";
+    $("chIn").focus();return}
   deptCode=code;curDept=d.id;myName=n;
   try{localStorage.setItem("mirs-name",n);localStorage.setItem("mirs-code",code);localStorage.setItem("mirs-dept",d.id)}catch(e){}
   ensureAC(); chirp("in"); $("powerMsg").textContent="מבקש גישה למיקרופון…";

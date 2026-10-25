@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ניהול מירס</title>
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--page:#D3D6D8;--ink:#2A2E31;--soft:#5C6266;--card:#fff;--line:#C4C8CB;--dark:#24292E;--safety:#F2B705;--red:#D64535;--green:#3FA34D}
+@media (prefers-color-scheme:dark){:root{--page:#1A1D1F;--ink:#E3E5E6;--soft:#9BA2A7;--card:#24292E;--line:#3A4148}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:"Rubik","Arial Hebrew",Arial,sans-serif;padding:20px 16px 110px}
+h1{margin:0 0 4px;font-size:1.6rem;font-weight:900;text-align:center}
+h1 em{font-style:normal;color:var(--safety)}
+.sub{text-align:center;color:var(--soft);margin:0 0 20px;font-size:.9rem}
+.wrap{max-width:640px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:.8rem;color:var(--soft);margin-bottom:4px}
+input{font:inherit;font-size:1rem;width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink)}
+input.code{direction:ltr;text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.15rem;letter-spacing:.06em}
+input.code:placeholder-shown{direction:rtl;font-family:inherit;font-size:.9rem;letter-spacing:0}
+button{font:inherit;font-weight:700;font-size:.88rem;border:0;border-radius:99px;padding:8px 14px;cursor:pointer;background:var(--dark);color:#fff}
+button.y{background:var(--safety);color:#1A1400}
+button.g{background:var(--green)}
+button.r{background:transparent;color:var(--red);border:1px solid var(--red)}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;align-items:end}
+.row>div{flex:1}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.hint{font-size:.8rem;color:var(--soft);margin:6px 0 0}
+.warn{color:var(--red)}
+.bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:10px;justify-content:center;align-items:center}
+#msg{font-size:.88rem;min-height:1.2em}
+.err{color:var(--red)}.ok{color:var(--green)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>מירס<em>.</em> ניהול</h1>
+  <p class="sub">קודים למחלקות. כל קוד מחבר עובדים לערוץ של המחלקה שלו.</p>
+
+  <form class="card" id="login">
+    <label for="pw">סיסמת מנהל</label>
+    <div class="row"><div><input id="pw" type="password" autocomplete="current-password" required></div><button class="y" type="submit">כניסה</button></div>
+    <p class="hint" id="loginMsg" role="status"></p>
+  </form>
+
+  <div id="panel" hidden>
+    <div id="list"></div>
+    <button class="g" type="button" id="add">➕ הוספת מחלקה</button>
+    <p class="hint">החלפת קוד מנתקת מיד את מי שמשתמש בקוד הישן. אחרי כל שינוי לוחצים "שמירה".</p>
+  </div>
+</div>
+<div class="bar" id="bar" hidden>
+  <span id="msg" role="status"></span>
+  <button class="y" type="button" id="save">💾 שמירה</button>
+  <button type="button" id="logout">יציאה</button>
+</div>
+
+<script>
+const API="/.netlify/functions/depts", $=id=>document.getElementById(id);
+let pw="", depts=[], dirty=false;
+try{pw=sessionStorage.getItem("mirs-admin")||""}catch(e){}
+
+const ERR={auth:"סיסמה שגויה.","no-admin":"עוד לא הוגדרה סיסמת מנהל ב-Netlify (ADMIN_PASSWORD).",name:"לכל מחלקה צריך שם.",short:"קוד קצר מדי (לפחות 6 תווים)",dup:"אותו קוד מופיע פעמיים",nocode:"חסר קוד",bad:"שגיאה בבקשה."};
+async function call(body){
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","x-admin":pw},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({ok:false,error:"bad"}));
+  if(!j.ok)throw new Error((ERR[j.error]||"שגיאה")+(j.n?" ("+j.n+")":""));
+  return j;
+}
+const pretty=c=>{c=String(c||"");return /^\d{10}$/.test(c)?c.slice(0,5)+"-"+c.slice(5):c};
+const newCode=()=>{const r=crypto.getRandomValues(new Uint8Array(10));let s=String(1+r[0]%9);for(let i=1;i<10;i++)s+=r[i]%10;return s};
+const shareText=d=>"קוד מירס למחלקת "+d.n+": "+pretty(d.code)+"\n"+location.origin;
+function setMsg(t,cls){$("msg").textContent=t;$("msg").className=cls||""}
+function mark(){dirty=true;setMsg("יש שינויים שלא נשמרו","err")}
+
+function render(){
+  const L=$("list");L.replaceChildren();
+  depts.forEach((d,i)=>{
+    const c=document.createElement("div");c.className="card";
+    c.innerHTML=`<div class="row"><div><label>שם המחלקה</label><input class="n" maxlength="30"></div></div>
+      <div style="margin-top:10px"><label>קוד</label><input class="code" inputmode="numeric" maxlength="30" placeholder="הקלידו קוד קיים או צרו חדש"></div>
+      <div class="btns"><button type="button" class="copy">📋 העתקה</button><button type="button" class="g wa">וואטסאפ</button><button type="button" class="y nc">🔄 קוד חדש</button><button type="button" class="r del">מחיקה</button></div>`;
+    const n=c.querySelector(".n"),code=c.querySelector(".code");
+    n.value=d.n;code.value=pretty(d.code);
+    n.oninput=()=>{d.n=n.value;mark()};
+    code.oninput=()=>{d.code=code.value.replace(/[\s-]/g,"");mark()};
+    c.querySelector(".copy").onclick=async()=>{if(!d.code)return setMsg("אין קוד להעתקה","err");try{await navigator.clipboard.writeText(shareText(d));setMsg("הועתק: "+d.n,"ok")}catch(e){prompt("העתיקו:",shareText(d))}};
+    c.querySelector(".wa").onclick=()=>{if(!d.code)return setMsg("אין קוד לשליחה","err");if(dirty)return setMsg("קודם שומרים, ואז שולחים","err");window.open("https://wa.me/?text="+encodeURIComponent(shareText(d)),"_blank","noopener")};
+    c.querySelector(".nc").onclick=()=>{if(d.code&&!confirm("ליצור קוד חדש ל"+d.n+"?\nהקוד הישן יפסיק לעבוד אחרי השמירה."))return;d.code=newCode();code.value=pretty(d.code);mark()};
+    c.querySelector(".del").onclick=()=>{if(!confirm("למחוק את "+d.n+"?"))return;depts.splice(i,1);render();mark()};
+    L.appendChild(c);
+  });
+}
+async function enter(){
+  try{const j=await call({action:"list"});depts=j.depts;try{sessionStorage.setItem("mirs-admin",pw)}catch(e){}
+    $("login").hidden=true;$("panel").hidden=false;$("bar").hidden=false;render();dirty=false;setMsg("")}
+  catch(e){$("loginMsg").textContent=e.message;$("loginMsg").className="hint warn";pw="";try{sessionStorage.removeItem("mirs-admin")}catch(_){}}
+}
+$("login").onsubmit=e=>{e.preventDefault();pw=$("pw").value;$("loginMsg").textContent="בודק…";$("loginMsg").className="hint";enter()};
+$("add").onclick=()=>{depts.push({id:"",n:"מחלקה חדשה",code:newCode()});render();mark();$("list").lastElementChild.querySelector(".n").select()};
+$("save").onclick=async()=>{$("save").disabled=true;setMsg("שומר…");
+  try{const j=await call({action:"save",depts});depts=j.depts;render();dirty=false;setMsg("נשמר ✓","ok")}catch(e){setMsg(e.message,"err")}
+  $("save").disabled=false};
+$("logout").onclick=()=>{try{sessionStorage.removeItem("mirs-admin")}catch(e){}location.reload()};
+window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
+if(pw)enter();
+</script>
+</body>
+</html>
