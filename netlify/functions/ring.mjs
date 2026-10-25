@@ -13,8 +13,11 @@ export default async (req) => {
   const from = String(b.from || "");
   const to = String(b.to || "");
   const name = String(b.name || "מישהו").replace(/[<>]/g, "").slice(0, 18);
-  const kind = b.kind === "talk" ? "talk" : "alert";
-  if (!/^[a-f0-9]{16}$/.test(ch) || !ID.test(from) || !(to === "all" || ID.test(to))) return Response.json({ ok: false }, { status: 400 });
+  const kind = b.kind === "talk" ? "talk" : b.kind === "line" ? "line" : "alert";
+  const dept = String(b.dept || "").replace(/[<>]/g, "").slice(0, 30);
+  const hub = /^[a-z0-9-]{1,24}$/.test(b.hub || "") ? b.hub : "";
+  const hubName = String(b.hubName || "המוקד").replace(/[<>]/g, "").slice(0, 30);
+  if (!/^[a-f0-9]{16}$/.test(ch) || !ID.test(from) || !(to === "all" || ID.test(to)) || (kind === "line" && !hub)) return Response.json({ ok: false }, { status: 400 });
 
   // simple throttle per sender+target
   const k = from + ">" + to, now = Date.now();
@@ -24,8 +27,10 @@ export default async (req) => {
   let url = String(b.url || "");
   const origin = new URL(req.url).origin;
   if (!url.startsWith(origin) || url.includes("#")) url = origin + "/";
+  if (kind === "line") url = origin + "/#line=" + hub;
 
-  const text = kind === "talk" ? `${name} מנסה לדבר איתך במירס` : `${name} קורא לך במירס`;
+  const text = kind === "line" ? `📞 ${name}${dept ? " (" + dept + ")" : ""} קורא ל${hubName}. לחצו לענות`
+    : kind === "talk" ? `${name} מנסה לדבר איתך במירס` : `${name} קורא לך במירס`;
   const body = {
     app_id: appId,
     target_channel: "push",
@@ -33,10 +38,13 @@ export default async (req) => {
     contents: { en: text, he: text },
     url,
     priority: 10,
-    ttl: 120,
+    ttl: kind === "line" ? 300 : 120,
   };
 
-  if (to === "all") {
+  if (kind === "line") {
+    // devices of the hub department tag themselves with the line's fingerprint
+    body.filters = [{ field: "tag", key: "hub", relation: "=", value: ch }, { field: "tag", key: "uid", relation: "!=", value: from }];
+  } else if (to === "all") {
     const online = Array.isArray(b.online) ? b.online.filter((x) => ID.test(x)).slice(0, 60) : [];
     const filters = [{ field: "tag", key: "ch", relation: "=", value: ch },
                      { field: "tag", key: "uid", relation: "!=", value: from }];

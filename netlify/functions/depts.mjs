@@ -1,12 +1,13 @@
 // Department list for Mirs.
 // GET  -> public list (id, name, fingerprint) used by the app to recognise a code.
+// POST {action:"line", code, hub} -> any valid department code gets the key of a hub's call line (e.g. the Moked)
 // POST -> admin only (header x-admin = ADMIN_PASSWORD env var): {action:"list"} or {action:"save", depts:[...]}
 import { getStore } from "@netlify/blobs";
-import { pbkdf2Sync, timingSafeEqual, createHash, randomBytes } from "node:crypto";
+import { pbkdf2Sync, timingSafeEqual, createHash, createHmac, randomBytes } from "node:crypto";
 
 // initial departments (fingerprints only; the codes themselves are never stored in the repo)
 const SEED = [
-  { id: "moked", n: "מוקד", t: "a156735a33712b71" },
+  { id: "moked", n: "מוקד", t: "a156735a33712b71", hub: true },
   { id: "env", n: "איכות הסביבה", t: "693fb8f346b07c67" },
   { id: "dover", n: "דוברות", t: "4f0fac11d079bcd0" },
   { id: "beaches", n: "חופים", t: "cbd81a76647baf7f" },
@@ -34,9 +35,22 @@ export default async (req) => {
 
   if (req.method === "GET") {
     const list = await load(store);
-    return json(list.map(({ id, n, t }) => ({ id, n, t })));
+    return json(list.map(({ id, n, t, hub }) => ({ id, n, t, hub: !!hub })));
   }
   if (req.method !== "POST") return json({ ok: false }, 405);
+
+  let b;
+  try { b = await req.json(); } catch { return json({ ok: false, error: "bad" }, 400); }
+
+  if (b.action === "line") {
+    const list = await load(store), code = norm(b.code);
+    const me = code.length >= 6 && list.find((x) => x.t === tagOf(code));
+    const hub = list.find((x) => x.id === b.hub && x.hub);
+    if (!me || !hub) { await new Promise((r) => setTimeout(r, 800)); return json({ ok: false, error: "auth" }, 403); }
+    let secret = await store.get("line-secret");
+    if (!secret) { secret = randomBytes(32).toString("hex"); await store.set("line-secret", secret); }
+    return json({ ok: true, key: createHmac("sha256", secret).update("line:" + hub.id).digest("hex") });
+  }
 
   const pass = process.env.ADMIN_PASSWORD;
   if (!pass) return json({ ok: false, error: "no-admin" }, 503);
@@ -45,8 +59,6 @@ export default async (req) => {
     return json({ ok: false, error: "auth" }, 401);
   }
 
-  let b;
-  try { b = await req.json(); } catch { return json({ ok: false, error: "bad" }, 400); }
   const current = await load(store);
 
   if (b.action === "list") return json({ ok: true, depts: current });
@@ -71,7 +83,7 @@ export default async (req) => {
       } else return json({ ok: false, error: "nocode", n }, 400);
       if (tags.has(t)) return json({ ok: false, error: "dup", n }, 400);
       tags.add(t);
-      out.push({ id, n, t, code });
+      out.push({ id, n, t, code, hub: !!d.hub });
     }
     await store.setJSON("depts", out);
     return json({ ok: true, depts: out });
