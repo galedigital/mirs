@@ -406,7 +406,7 @@ function rebuild(){const before=new Set(roster.map(x=>x.id));roster=[{id:myId,na
 function send(msg){msg.from=myId;pub("m",msg)}
 function setTx(v){myTx=v;hello();rebuild()}
 function onRoster(){if(rx.id&&!roster.some(x=>x.id===rx.peer))endRx();render()}
-function deliver(d){if(!powered)return;if(d.t==="voice")onVoice(d);else onCtl(d)}
+function deliver(d){if(!powered)return;if(d.t==="voice"&&onLine)lineAnswered=true;if(d.t==="voice")onVoice(d);else onCtl(d)}
 
 try{myId=localStorage.getItem("mirs-id")}catch(e){}
 if(!myId||!/^m[a-z0-9]{6,12}$/.test(myId)){myId="m"+Math.random().toString(36).slice(2,10);try{localStorage.setItem("mirs-id",myId)}catch(e){}}
@@ -560,7 +560,12 @@ function onCtl(d){
     const n=peerName(d.from,d.n),loc={lat,lng,acc:+d.acc||0};chirp("in");if(navigator.vibrate)navigator.vibrate(80);log("📍 "+n,d.from,{loc});showLoc(n,loc,true);return}
   if(d.type!=="alert")return;
   if(rx.id||txId)return; chirp("alert"); if(navigator.vibrate)navigator.vibrate([200,100,200]);
-  const n=peerName(d.from,d.n); showOver("התראה",n,"מבקש שתחזרו אליו",false,false); sel=d.from; log("🔔 "+n,d.from);
+  const n=peerName(d.from,d.n);
+  if(onLine&&!onLine.caller){ // the Moked: someone is calling the line
+    if(navigator.vibrate)navigator.vibrate([400,150,400,150,400]);
+    showOver("📞 קריאה נכנסת",n+(d.dn?" ("+String(d.dn).slice(0,30)+")":""),"החזיקו את הכפתור הצהוב כדי לענות",false,false);log("📞 "+n,d.from);
+    clearTimeout(callT);callT=setTimeout(()=>{if(!rx.id&&!txId&&!pressing)hideOver()},20000);return}
+  showOver("התראה",n,"מבקש שתחזרו אליו",false,false); sel=d.from; log("🔔 "+n,d.from);
   setTimeout(()=>{if(!rx.id&&!txId&&!pressing)hideOver()},3500);
 }
 
@@ -691,7 +696,7 @@ $("powerBtn").onclick=async()=>{
   loadKnown();await startNet(code);ownPush=pushTag;
   if(d.hub){const k=await getLine(d.id);if(k)hubPush=await pushTagOf(k)}
   tagPush();if(!isTest)$("shareBtn").classList.add("show");$("swBtn").classList.add("show");drawLineBtns();
-  if(pendingLine&&pendingLine===d.id)joinLine(d.id,false);
+  if(d.hub||(pendingLine&&pendingLine===d.id))joinLine(d.id,false); // the Moked always listens on its call line
   if(!micOk)showOver("אין מיקרופון","מצב האזנה בלבד","הדפדפן לא אישר גישה למיקרופון. אפשר עדיין לשמוע אחרים.",false,false);
   render();
 };
@@ -703,7 +708,7 @@ async function proofOf(code){if(proofs[code])return proofs[code];
   const bits=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:TE.encode("mirs-channel-v3"),iterations:150000,hash:"SHA-256"},base,512));
   const pre=TE.encode("mirs-proof-v1|"),buf=new Uint8Array(pre.length+32);buf.set(pre);buf.set(bits.slice(0,32),pre.length);
   return proofs[code]={t:hex(bits.slice(56,64)),v:hex(new Uint8Array(await crypto.subtle.digest("SHA-256",buf)))}}
-let lineErr="";
+let lineErr="",lineAnswered=false,lineRingT=0,callT=0;
 async function getLine(hub){
   if(hub==="testhub"){if(!isTest)return "";const h=new Uint8Array(await crypto.subtle.digest("SHA-256",TE.encode("mirs-test-line-v1")));return Array.from(h,x=>x.toString(16).padStart(2,"0")).join("")}
   try{const c=JSON.parse(localStorage.getItem("mirs-line-"+hub)||"null");if(c&&c.code===deptCode&&c.key)return c.key}catch(e){}
@@ -723,13 +728,14 @@ async function joinLine(hub,caller){
   if(!key){showOver("אין חיבור לקו","",lineErr==="noproof"?"המנהל צריך להקליד מחדש את קוד המחלקה בממשק הניהול ולשמור":lineErr==="auth"?"קוד המחלקה לא מאושר לקו הזה":lineErr==="locked"?"יותר מדי ניסיונות. נסו שוב בעוד 15 דקות":"בדקו אינטרנט ונסו שוב",false,false);setTimeout(()=>{if(!rx.id&&!txId)hideOver()},3000);return}
   resetNet();onLine={hub,caller};curCh="line-"+hub;loadKnown();await startNet(key);
   document.querySelector(".brand p").textContent="📞 קו "+deptName(hub);drawLineBtns();render();
-  if(caller){chirp("alert");send({t:"ctl",type:"alert",to:"all",n:myName});
+  if(caller){chirp("alert");lineAnswered=false;const ringOnce=()=>send({t:"ctl",type:"alert",to:"all",n:myName,dn:deptName(curDept)});ringOnce();
+    let tries=0;clearInterval(lineRingT);lineRingT=setInterval(()=>{if(!onLine||!onLine.caller||lineAnswered||++tries>7){clearInterval(lineRingT);return}ringOnce()},8000);
     ring("all","line",{hub,hubName:deptName(hub),dept:deptName(curDept)});
     showOver("קורא ל"+deptName(hub),"ממתינים למענה…","הטלפונים במוקד מצלצלים גם כשהאפליקציה סגורה",true,true)}
   else{hideOver();chirp("in")}
 }
 async function leaveLine(){
-  if(!onLine)return; if(pressing)up(); resetNet();onLine=null;curCh=curDept;loadKnown();await startNet(deptCode);
+  if(!onLine)return; clearInterval(lineRingT); if(pressing)up(); resetNet();onLine=null;curCh=curDept;loadKnown();await startNet(deptCode);
   document.querySelector(".brand p").textContent="🔒 "+deptName(curDept);hideOver();drawLineBtns();render()}
 window.addEventListener("hashchange",()=>{const h=(new URLSearchParams(location.hash.slice(1))).get("line");
   if(h&&powered&&h===curDept&&!(onLine&&onLine.hub===h))joinLine(h,false);try{window.history.replaceState(null,"",location.pathname)}catch(e){}});
