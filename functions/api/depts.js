@@ -81,9 +81,10 @@ export async function onRequest({ request: req, env }) {
     return json({ ok: true, key: hex(await crypto.subtle.sign("HMAC", key, TE.encode("line:" + hub.id))) });
   }
 
-  const pass = env.ADMIN_PASSWORD;
+  // trimmed: a pasted secret often carries a trailing space/newline that an HTTP header cannot
+  const pass = String(env.ADMIN_PASSWORD || "").trim();
   if (!pass) return json({ ok: false, error: "no-admin" }, 503);
-  if (!(await same(req.headers.get("x-admin") || "", pass))) {
+  if (!(await same((req.headers.get("x-admin") || "").trim(), pass))) {
     await fail(kv, ip);
     return json({ ok: false, error: "auth" }, 401);
   }
