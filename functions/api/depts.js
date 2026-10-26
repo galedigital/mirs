@@ -52,7 +52,12 @@ async function load(kv) {
   return Array.isArray(d) ? d : SEED.map((x) => ({ ...x, code: "" }));
 }
 
-export async function onRequest({ request: req, env }) {
+export async function onRequest(ctx) {
+  try { return await handle(ctx); }
+  catch (e) { return json({ ok: false, error: "server", detail: String((e && e.message) || e).slice(0, 200) }, 500); }
+}
+
+async function handle({ request: req, env }) {
   // the KV binding should be named MIRS; fall back to any KV binding so a different name still works
   const kv = env.MIRS || Object.values(env).find((v) => v && typeof v.get === "function" && typeof v.put === "function" && typeof v.list === "function");
   if (req.method === "GET") {
