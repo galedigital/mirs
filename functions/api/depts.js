@@ -53,13 +53,14 @@ async function load(kv) {
 }
 
 export async function onRequest({ request: req, env }) {
-  const kv = env.MIRS;
+  // the KV binding should be named MIRS; fall back to any KV binding so a different name still works
+  const kv = env.MIRS || Object.values(env).find((v) => v && typeof v.get === "function" && typeof v.put === "function" && typeof v.list === "function");
   if (req.method === "GET") {
     const list = await load(kv);
     return json(list.map(({ id, n, t, hub }) => ({ id, n, t, hub: !!hub })));
   }
   if (req.method !== "POST") return json({ ok: false }, 405);
-  if (!kv) return json({ ok: false, error: "no-kv" }, 503);
+  if (!kv) return json({ ok: false, error: "no-kv", bindings: Object.keys(env) }, 503);
 
   let b;
   try { b = await req.json(); } catch { return json({ ok: false, error: "bad" }, 400); }
