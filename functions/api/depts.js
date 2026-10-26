@@ -59,7 +59,9 @@ export async function onRequest(ctx) {
 
 async function handle({ request: req, env }) {
   // the KV binding should be named MIRS; fall back to any KV binding so a different name still works
-  const kv = env.MIRS || Object.values(env).find((v) => v && typeof v.get === "function" && typeof v.put === "function" && typeof v.list === "function");
+  // (RPC bindings such as ASSETS answer to any method name, so match the real KV class)
+  const kvOf = (v) => v && v.constructor && v.constructor.name === "KvNamespace";
+  const kv = kvOf(env.MIRS) ? env.MIRS : (Object.entries(env).find(([k, v]) => k !== "ASSETS" && kvOf(v)) || [])[1];
   if (req.method === "GET") {
     const list = await load(kv);
     return json(list.map(({ id, n, t, hub }) => ({ id, n, t, hub: !!hub })));
