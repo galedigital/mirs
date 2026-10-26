@@ -74,8 +74,8 @@ try{pw=sessionStorage.getItem("mirs-admin")||""}catch(e){}
 const ERR={locked:"יותר מדי ניסיונות שגויים. נסו שוב בעוד 15 דקות.",auth:"סיסמה שגויה.","no-admin":"עוד לא הוגדרה סיסמת מנהל ב-Cloudflare (ADMIN_PASSWORD).","no-kv":"עוד לא חובר מאגר הנתונים MIRS ב-Cloudflare.",name:"לכל מחלקה צריך שם.",short:"קוד קצר מדי (לפחות 6 תווים)",dup:"אותו קוד מופיע פעמיים",nocode:"חסר קוד",bad:"שגיאה בבקשה."};
 async function call(body){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","x-admin":pw},body:JSON.stringify(body)});
-  const j=await r.json().catch(()=>({ok:false,error:"bad"}));
-  if(!j.ok)throw new Error((ERR[j.error]||"שגיאה")+(j.n?" ("+j.n+")":""));
+  const j=await r.json().catch(()=>({ok:false,error:"http"+r.status}));
+  if(!j.ok)throw new Error((ERR[j.error]||"שגיאה ["+(j.error||r.status)+"]")+(j.n?" ("+j.n+")":""));
   return j;
 }
 const pretty=c=>{c=String(c||"");return /^\d{10}$/.test(c)?c.slice(0,5)+"-"+c.slice(5):c};
@@ -104,7 +104,7 @@ function render(){
   });
 }
 async function enter(){
-  try{const j=await call({action:"list"});depts=j.depts;try{sessionStorage.setItem("mirs-admin",pw)}catch(e){}
+  try{const j=await call({action:"list"});depts=j.depts.map(d=>Object.assign(d,{orig:d.code}));try{sessionStorage.setItem("mirs-admin",pw)}catch(e){}
     $("login").hidden=true;$("panel").hidden=false;$("bar").hidden=false;render();dirty=false;setMsg("")}
   catch(e){$("loginMsg").textContent=e.message;$("loginMsg").className="hint warn";pw="";try{sessionStorage.removeItem("mirs-admin")}catch(_){}}
 }
@@ -119,8 +119,10 @@ async function proofOf(code){const base=await crypto.subtle.importKey("raw",TE.e
   const pre=TE.encode("mirs-proof-v1|"),buf=new Uint8Array(pre.length+32);buf.set(pre);buf.set(bits.slice(0,32),pre.length);
   return {t:hex(bits.slice(56,64)),v:hex(new Uint8Array(await crypto.subtle.digest("SHA-256",buf)))}}
 $("save").onclick=async()=>{$("save").disabled=true;setMsg("שומר…");
-  try{const send=[];for(const d of depts){const c=normCode(d.code),x={id:d.id,n:d.n,code:d.code,hub:!!d.hub};if(c.length>=6)Object.assign(x,await proofOf(c));send.push(x)}
-    const j=await call({action:"save",depts:send});depts=j.depts;render();dirty=false;setMsg("נשמר ✓","ok")}catch(e){setMsg(e.message,"err")}
+  try{const send=[];let k=0;for(const d of depts){const c=normCode(d.code),x={id:d.id,n:d.n,code:d.code,hub:!!d.hub};k++;
+      if(c.length>=6&&!(d.proof&&d.code===d.orig)){setMsg("מכין קוד מאובטח "+k+"/"+depts.length+"…");Object.assign(x,await proofOf(c))}send.push(x)}
+    setMsg("שומר…");
+    const j=await call({action:"save",depts:send});depts=j.depts.map(d=>Object.assign(d,{orig:d.code}));render();dirty=false;setMsg("נשמר ✓","ok")}catch(e){setMsg(e.message||String(e),"err")}
   $("save").disabled=false};
 $("logout").onclick=()=>{try{sessionStorage.removeItem("mirs-admin")}catch(e){}location.reload()};
 window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
