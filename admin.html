@@ -75,7 +75,7 @@ const ERR={locked:"יותר מדי ניסיונות שגויים. נסו שוב 
 async function call(body){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","x-admin":pw},body:JSON.stringify(body)});
   const j=await r.json().catch(()=>({ok:false,error:"http"+r.status}));
-  if(!j.ok)throw new Error((ERR[j.error]||"שגיאה ["+(j.error||r.status)+"]")+(j.n?" ("+j.n+")":""));
+  if(!j.ok)throw new Error((ERR[j.error]||"שגיאה ["+(j.error||r.status)+(j.detail?": "+j.detail:"")+"]")+(j.n?" ("+j.n+")":""));
   return j;
 }
 const pretty=c=>{c=String(c||"");return /^\d{10}$/.test(c)?c.slice(0,5)+"-"+c.slice(5):c};
